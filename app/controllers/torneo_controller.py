@@ -23,9 +23,9 @@ def listar(
 def crear(
     data: TorneoCreate,
     db: Session = Depends(get_db),
-    current: Usuario = Depends(require_admin_or_org),
+    _: Usuario = Depends(require_admin_or_org),  
 ):
-    return TorneoService(db).crear(data, current.id)
+    return TorneoService(db).crear(data)
 
 
 @router.get("/{torneo_id}", response_model=TorneoOut)

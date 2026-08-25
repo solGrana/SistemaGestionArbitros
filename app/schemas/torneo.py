@@ -4,19 +4,21 @@ from datetime import date
 
 
 class TorneoCreate(BaseModel):
-    nombre:       str
-    descripcion:  Optional[str]  = None
-    fecha_inicio: Optional[date] = None
-    fecha_fin:    Optional[date] = None
-    activo:       bool           = True
+    nombre:          str
+    descripcion:     Optional[str]  = None
+    fecha_inicio:    Optional[date] = None
+    fecha_fin:       Optional[date] = None
+    activo:          bool           = True
+    organizacion_id: Optional[int]  = None  
 
 
 class TorneoUpdate(BaseModel):
-    nombre:       Optional[str]  = None
-    descripcion:  Optional[str]  = None
-    fecha_inicio: Optional[date] = None
-    fecha_fin:    Optional[date] = None
-    activo:       Optional[bool] = None
+    nombre:          Optional[str]  = None
+    descripcion:     Optional[str]  = None
+    fecha_inicio:    Optional[date] = None
+    fecha_fin:       Optional[date] = None
+    activo:          Optional[bool] = None
+    organizacion_id: Optional[int]  = None 
 
 
 class TorneoOut(BaseModel):

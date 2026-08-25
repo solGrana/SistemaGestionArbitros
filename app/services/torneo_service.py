@@ -10,8 +10,8 @@ class TorneoService:
     def __init__(self, db: Session):
         self.repo = TorneoRepository(db)
 
-    def crear(self, data: TorneoCreate, organizacion_id: int) -> Torneo:
-        torneo = Torneo(**data.model_dump(), organizacion_id=organizacion_id)
+    def crear(self, data: TorneoCreate) -> Torneo: 
+        torneo = Torneo(**data.model_dump())
         return self.repo.save(torneo)
 
     def listar(self, activo: Optional[bool] = None) -> List[Torneo]:

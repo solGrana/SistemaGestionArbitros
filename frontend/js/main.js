@@ -125,7 +125,15 @@ function renderTorneos(list) {
     : `<tr><td colspan="7"><div class="empty-state"><div class="ei">🏆</div><p>Sin torneos</p></div></td></tr>`;
 }
 
-function abrirModalTorneo(t = null) {
+async function abrirModalTorneo(t = null) {
+  // Cargar usuarios con rol organizacion o admin
+  const usuarios = await API.get('/usuarios');
+  const orgs = usuarios.filter(u => ['organizacion', 'admin'].includes(u.rol));
+
+  document.getElementById('mTorneoOrg').innerHTML =
+    `<option value="">Sin organizador</option>` +
+    orgs.map(u => `<option value="${u.id}" ${t?.organizacion_id == u.id ? 'selected' : ''}>${u.nombre}</option>`).join('');
+
   document.getElementById('mTorneoTitle').textContent = t ? 'Editar torneo' : 'Nuevo torneo';
   document.getElementById('mTorneoId').value      = t?.id     || '';
   document.getElementById('mTorneoNombre').value  = t?.nombre || '';
@@ -138,12 +146,14 @@ function abrirModalTorneo(t = null) {
 
 async function guardarTorneo() {
   const id   = document.getElementById('mTorneoId').value;
+  const orgId = document.getElementById('mTorneoOrg').value;
   const body = {
-    nombre:       document.getElementById('mTorneoNombre').value.trim(),
-    descripcion:  document.getElementById('mTorneoDesc').value.trim()    || null,
-    fecha_inicio: document.getElementById('mTorneoFechaI').value          || null,
-    fecha_fin:    document.getElementById('mTorneoFechaF').value          || null,
-    activo:       document.getElementById('mTorneoActivo').checked,
+    nombre:          document.getElementById('mTorneoNombre').value.trim(),
+    descripcion:     document.getElementById('mTorneoDesc').value.trim() || null,
+    fecha_inicio:    document.getElementById('mTorneoFechaI').value || null,
+    fecha_fin:       document.getElementById('mTorneoFechaF').value || null,
+    activo:          document.getElementById('mTorneoActivo').checked,
+    organizacion_id: orgId ? parseInt(orgId) : null,
   };
   if (!body.nombre) { toast('El nombre es obligatorio', 'err'); return; }
   try {
