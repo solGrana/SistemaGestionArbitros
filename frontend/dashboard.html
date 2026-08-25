@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestión de Árbitros</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <span class="icon">⚽</span>
+      <h2>Gestión de<br>Árbitros</h2>
+      <p>Sistema de asignación</p>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-label">Principal</div>
+      <div class="nav-item" data-s="dashboard"><span class="ni">📊</span> Dashboard</div>
+      <div class="nav-item" data-s="partidos"> <span class="ni">📋</span> Partidos</div>
+      <div class="nav-label">Gestión</div>
+      <div class="nav-item" data-s="torneos">  <span class="ni">🏆</span> Torneos</div>
+      <div class="nav-item" data-s="usuarios"> <span class="ni">👤</span> Árbitros y Usuarios</div>
+    </nav>
+    <div class="sidebar-user">
+      <div class="avatar" id="uAvatar">A</div>
+      <div class="user-info">
+        <div class="name" id="uName"></div>
+        <div class="role" id="uRole"></div>
+      </div>
+      <button class="logout-btn" onclick="logout()" title="Cerrar sesión">⏻</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <header class="topbar">
+      <span class="topbar-title" id="topTitle">Dashboard</span>
+      <div class="topbar-actions" id="topActions"></div>
+    </header>
+
+    <div class="content">
+
+      <!-- ════ DASHBOARD ════ -->
+      <div class="section" id="sec-dashboard">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Total partidos</div>
+            <div class="stat-value" id="stPartidos">—</div>
+            <div class="stat-sub">registrados</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Sin asignar</div>
+            <div class="stat-value" style="color:var(--warning)" id="stSinAsig">—</div>
+            <div class="stat-sub">requieren árbitros</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Torneos activos</div>
+            <div class="stat-value" style="color:var(--primary)" id="stTorneos">—</div>
+            <div class="stat-sub">en curso</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Árbitros</div>
+            <div class="stat-value" style="color:var(--success)" id="stArbitros">—</div>
+            <div class="stat-sub">registrados</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <h3>Próximos partidos</h3>
+            <button class="btn btn-sm btn-primary ao" onclick="abrirModalPartido()">+ Partido</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Fecha y hora</th><th>Torneo</th><th>Cancha</th><th>Cupo</th><th class="ao">Acción</th></tr></thead>
+              <tbody id="dashTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════ PARTIDOS ════ -->
+      <div class="section" id="sec-partidos" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+          <div>
+            <h2 style="font-size:19px;font-weight:700">Partidos</h2>
+            <p style="color:var(--muted);font-size:13px">Gestión y asignación de árbitros</p>
+          </div>
+          <button class="btn btn-primary ao" onclick="abrirModalPartido()">+ Nuevo partido</button>
+        </div>
+        <div class="filter-bar">
+          <input type="text" id="buscarPartido" class="form-input" placeholder="🔍 Buscar cancha o torneo..." oninput="filtrarPartidos()">
+          <select id="filtroTorneo" class="form-select" onchange="filtrarPartidos()"><option value="">Todos los torneos</option></select>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+            <input type="checkbox" id="filtroSinAsig" onchange="filtrarPartidos()"> Solo sin asignar
+          </label>
+        </div>
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Fecha y hora</th><th>Cancha</th><th>Torneo</th><th>Cupo</th><th>Árbitros</th><th>Pago</th><th>Valor árb.</th><th class="ao">Acciones</th></tr></thead>
+              <tbody id="partidosTbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════ TORNEOS ════ -->
+      <div class="section" id="sec-torneos" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+          <div>
+            <h2 style="font-size:19px;font-weight:700">Torneos</h2>
+            <p style="color:var(--muted);font-size:13px">Administración de torneos</p>
+          </div>
+          <button class="btn btn-primary ao" onclick="abrirModalTorneo()">+ Nuevo torneo</button>
+        </div>
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>#</th><th>Nombre</th><th>Descripción</th><th>Inicio</th><th>Fin</th><th>Estado</th><th class="ao">Acciones</th></tr></thead>
+              <tbody id="torneosTbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════ USUARIOS ════ -->
+      <div class="section" id="sec-usuarios" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+          <div>
+            <h2 style="font-size:19px;font-weight:700">Árbitros y Usuarios</h2>
+            <p style="color:var(--muted);font-size:13px">Gestión de usuarios del sistema</p>
+          </div>
+          <button class="btn btn-primary ao" onclick="abrirModalUsuario()">+ Nuevo usuario</button>
+        </div>
+        <div class="filter-bar">
+          <input type="text" id="buscarUsuario" class="form-input" placeholder="🔍 Buscar nombre o email..." oninput="filtrarUsuarios()">
+          <select id="filtroRol" class="form-select" onchange="filtrarUsuarios()">
+            <option value="">Todos los roles</option>
+            <option value="admin">Admin</option>
+            <option value="arbitro">Árbitro</option>
+            <option value="organizacion">Organización</option>
+          </select>
+        </div>
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>#</th><th>Nombre</th><th>Email</th><th>Rol</th><th>Teléfono</th><th class="ao">Acciones</th></tr></thead>
+              <tbody id="usuariosTbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /layout -->
+
+<!-- ════ MODAL TORNEO ════ -->
+<div class="modal-overlay" id="modalTorneo">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="mTorneoTitle">Nuevo torneo</h3>
+      <button class="modal-close" onclick="closeModal('modalTorneo')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="mTorneoId">
+      <div class="form-group"><label class="form-label">Nombre *</label><input type="text" id="mTorneoNombre" class="form-input" placeholder="Ej: Torneo Apertura 2025"></div>
+      <div class="form-group"><label class="form-label">Descripción</label><textarea id="mTorneoDesc" class="form-textarea" placeholder="Descripción opcional..."></textarea></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Fecha inicio</label><input type="date" id="mTorneoFechaI" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Fecha fin</label><input type="date" id="mTorneoFechaF" class="form-input"></div>
+      </div>
+      <div class="form-group"><label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="mTorneoActivo" checked> Torneo activo</label></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalTorneo')">Cancelar</button>
+      <button class="btn btn-primary"   onclick="guardarTorneo()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ MODAL PARTIDO ════ -->
+<div class="modal-overlay" id="modalPartido">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h3 id="mPartidoTitle">Nuevo partido</h3>
+      <button class="modal-close" onclick="closeModal('modalPartido')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="mPartidoId">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Torneo *</label><select id="mPartidoTorneo" class="form-select"></select></div>
+        <div class="form-group"><label class="form-label">Fecha y hora *</label><input type="datetime-local" id="mPartidoFecha" class="form-input"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Cancha *</label><input type="text" id="mPartidoCancha" class="form-input" placeholder="Ej: Cancha Central Norte"></div>
+      <div class="form-row-3">
+        <div class="form-group"><label class="form-label">Árbitros requeridos</label><input type="number" id="mPartidoCantArb" class="form-input" min="0" value="1"></div>
+        <div class="form-group"><label class="form-label">Asistentes requeridos</label><input type="number" id="mPartidoCantAsis" class="form-input" min="0" value="0"></div>
+        <div class="form-group"><label class="form-label">Modalidad de pago</label>
+          <select id="mPartidoModalidad" class="form-select"><option value="en_cancha">En cancha</option><option value="administrador">Administrador</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Valor árbitro ($)</label><input type="number" id="mPartidoValorArb" class="form-input" min="0" value="0"></div>
+        <div class="form-group"><label class="form-label">Valor asistente ($)</label><input type="number" id="mPartidoValorAsis" class="form-input" min="0" value="0"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalPartido')">Cancelar</button>
+      <button class="btn btn-primary"   onclick="guardarPartido()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ MODAL ASIGNAR ════ -->
+<div class="modal-overlay" id="modalAsignar">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h3>Asignar árbitros</h3>
+      <button class="modal-close" onclick="closeModal('modalAsignar')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="mAsigPartidoId">
+      <div id="mAsigInfo" style="background:var(--surface-2);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:20px;font-size:13px"></div>
+      <h4 style="font-size:13px;font-weight:700;margin-bottom:8px">Ya asignados</h4>
+      <div id="mAsigAsignados" style="margin-bottom:20px"></div>
+      <h4 style="font-size:13px;font-weight:700;margin-bottom:8px">Disponibles</h4>
+      <div id="mAsigDisponibles"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalAsignar')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ MODAL USUARIO ════ -->
+<div class="modal-overlay" id="modalUsuario">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="mUsuarioTitle">Nuevo árbitro</h3>
+      <button class="modal-close" onclick="closeModal('modalUsuario')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="mUsuarioId">
+      <div class="form-group"><label class="form-label">Nombre completo *</label><input type="text" id="mUsuarioNombre" class="form-input" placeholder="Ej: Juan Pérez"></div>
+      <div id="mUsuarioEmailGroup" class="form-group"><label class="form-label">Email *</label><input type="email" id="mUsuarioEmail" class="form-input" placeholder="juan@email.com"></div>
+      <div id="mUsuarioPassGroup"  class="form-group"><label class="form-label">Contraseña *</label><input type="password" id="mUsuarioPassword" class="form-input" placeholder="Mínimo 6 caracteres"></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Rol</label>
+          <select id="mUsuarioRol" class="form-select">
+            <option value="arbitro">Árbitro</option>
+            <option value="organizacion">Organización</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Teléfono</label><input type="tel" id="mUsuarioTelefono" class="form-input" placeholder="Ej: 1123456789"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalUsuario')">Cancelar</button>
+      <button class="btn btn-primary"   onclick="guardarUsuario()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-box" id="toasts"></div>
+<script src="/js/api.js"></script>
+<script src="/js/main.js"></script>
+</body>
+</html>
