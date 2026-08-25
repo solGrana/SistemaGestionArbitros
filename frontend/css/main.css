@@ -237,3 +237,168 @@ tbody tr:hover td      { background: var(--surface-2); }
 .login-brand h1 { font-size: 22px; font-weight: 700; }
 .login-brand p  { font-size: 13px; color: var(--muted); margin-top: 4px; }
 .login-error    { background: var(--danger-light); color: #991b1b; border: 1px solid #fecaca; border-radius: var(--radius-sm); padding: 10px 14px; font-size: 13px; margin-bottom: 16px; display: none; }
+
+/* =============================================================================
+   RESPONSIVE MOBILE (< 768px)
+   ============================================================================= */
+@media (max-width: 768px) {
+
+  /* ── Sidebar → barra inferior ── */
+  .sidebar {
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 58px;
+    flex-direction: row;
+    padding: 0;
+    z-index: 100;
+  }
+
+  .sidebar-brand,
+  .sidebar-user,
+  .nav-label {
+    display: none;
+  }
+
+  .sidebar-nav {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    padding: 0;
+    overflow: visible;
+  }
+
+  .nav-item {
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 4px 4px;
+    font-size: 10px;
+    gap: 3px;
+    border-left: none;
+    border-top: 3px solid transparent;
+  }
+
+  .nav-item.active {
+    border-left: none;
+    border-top-color: var(--primary);
+    background: rgba(29, 78, 216, .15);
+  }
+
+  .nav-item .ni { font-size: 20px; }
+
+  /* ── Main ── */
+  .main {
+    margin-left: 0;
+    margin-bottom: 58px;
+  }
+
+  .topbar {
+    height: 50px;
+    padding: 0 14px;
+  }
+
+  .topbar-title { font-size: 15px; }
+
+  .content { padding: 12px; }
+
+  /* ── Stats 2x2 ── */
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .stat-card  { padding: 14px 12px; }
+  .stat-value { font-size: 22px; }
+  .stat-label { font-size: 11px; margin-bottom: 4px; }
+  .stat-sub   { font-size: 11px; }
+
+  /* ── Tablas → scroll horizontal contenido ── */
+  .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: var(--radius);
+  }
+
+  table { min-width: 500px; }
+
+  th, td { padding: 10px 12px; font-size: 12px; }
+
+  /* ── Ocultar columnas menos importantes ── */
+  th:nth-child(6), td:nth-child(6),
+  th:nth-child(7), td:nth-child(7) {
+    display: none;
+  }
+
+  /* ── Cards ── */
+  .card-header { padding: 12px 14px; }
+
+  /* ── Filtros ── */
+  .filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .filter-bar .form-input,
+  .filter-bar .form-select {
+    max-width: 100%;
+  }
+
+  /* ── Section header ── */
+  .section > div:first-child {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  /* ── Modales → sube desde abajo ── */
+  .modal-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .modal, .modal-lg {
+    max-width: 100%;
+    border-radius: 16px 16px 0 0;
+    max-height: 90vh;
+  }
+
+  .modal-header { padding: 16px 18px 12px; }
+  .modal-body   { padding: 16px 18px; }
+  .modal-footer { padding: 12px 18px; }
+
+  /* ── Forms ── */
+  .form-row,
+  .form-row-3 {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  /* ── Login ── */
+  .login-wrap  { align-items: flex-start; }
+  .login-card  {
+    border-radius: 0;
+    min-height: 100vh;
+    padding: 48px 24px;
+    box-shadow: none;
+    border: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+}
+
+/* ── Tablet (769px - 1024px) ── */
+@media (min-width: 769px) and (max-width: 1024px) {
+  :root { --sidebar-w: 200px; }
+
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .content    { padding: 20px; }
+}

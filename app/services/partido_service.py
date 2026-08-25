@@ -8,9 +8,13 @@ from app.schemas.partido import PartidoCreate, PartidoUpdate, PartidoOut
 
 
 def _serializar(partido: Partido) -> dict:
-    """Convierte un Partido ORM a dict enriquecido con torneo_nombre."""
     data = {c.name: getattr(partido, c.name) for c in partido.__table__.columns}
     data["torneo_nombre"] = partido.torneo.nombre if partido.torneo else None
+    data["organizacion_nombre"] = (
+        partido.torneo.organizacion.nombre
+        if partido.torneo and partido.torneo.organizacion
+        else "Sin organización"
+    )
     data["asignaciones"] = [
         {
             "id":  a.id,

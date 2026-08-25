@@ -1,6 +1,7 @@
 from typing import Optional, List
 from sqlalchemy.orm import Session, joinedload
 from app.models.partido import Partido
+from app.models.torneo import Torneo
 
 
 class PartidoRepository:
@@ -9,9 +10,9 @@ class PartidoRepository:
 
     def _query_full(self):
         return self.db.query(Partido).options(
-            joinedload(Partido.torneo),
-            joinedload(Partido.asignaciones),
-        )
+        joinedload(Partido.torneo).joinedload(Torneo.organizacion),
+        joinedload(Partido.asignaciones),
+    )
 
     def get_by_id(self, partido_id: int) -> Optional[Partido]:
         return self._query_full().filter(Partido.id == partido_id).first()
