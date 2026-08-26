@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from sqlalchemy import inspect, text
 
 from app.database import engine, Base, SessionLocal
 from app.models import Usuario, Torneo, Partido, Asignacion  # registra los modelos
@@ -16,6 +17,22 @@ from app.controllers.asignacion_controller import router as asignacion_router
 
 # ── Crear tablas ──────────────────────────────────────────────────────────────
 Base.metadata.create_all(bind=engine)
+
+
+# ── Migración liviana (agrega columnas nuevas a tablas ya existentes) ─────────
+def _migrate():
+    insp = inspect(engine)
+    if "partidos" not in insp.get_table_names():
+        return
+    columnas = {c["name"] for c in insp.get_columns("partidos")}
+    with engine.begin() as conn:
+        if "equipo_local" not in columnas:
+            conn.execute(text("ALTER TABLE partidos ADD COLUMN equipo_local VARCHAR(120)"))
+        if "equipo_visitante" not in columnas:
+            conn.execute(text("ALTER TABLE partidos ADD COLUMN equipo_visitante VARCHAR(120)"))
+
+
+_migrate()
 
 
 # ── Seed inicial ──────────────────────────────────────────────────────────────

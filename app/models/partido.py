@@ -16,6 +16,8 @@ class Partido(Base):
     torneo_id           = Column(Integer, ForeignKey("torneos.id"),  nullable=False)
     fecha_hora          = Column(DateTime,                            nullable=False)
     cancha              = Column(String(120),                         nullable=False)
+    equipo_local        = Column(String(120),                         nullable=True)
+    equipo_visitante    = Column(String(120),                         nullable=True)
     cantidad_arbitros   = Column(Integer, default=1)
     cantidad_asistentes = Column(Integer, default=0)
     modalidad_pago      = Column(SAEnum(ModalidadPago), default=ModalidadPago.en_cancha)

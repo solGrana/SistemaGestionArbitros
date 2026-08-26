@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rm -f /tmp/smoke_test.py)",
+      "Bash(rm -f arbitros.db.bak)"
+    ]
+  }
+}

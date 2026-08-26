@@ -375,9 +375,9 @@ tbody tr:hover td      { background: var(--surface-2); }
 
   th, td { padding: 10px 12px; font-size: 12px; }
 
-  /* ── Ocultar columnas menos importantes ── */
-  th:nth-child(6), td:nth-child(6),
-  th:nth-child(7), td:nth-child(7) {
+  /* ── Ocultar columnas menos importantes (Pago y Valor árb.) ── */
+  .table-partidos th:nth-child(7), .table-partidos td:nth-child(7),
+  .table-partidos th:nth-child(8), .table-partidos td:nth-child(8) {
     display: none;
   }
 

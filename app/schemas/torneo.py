@@ -22,12 +22,13 @@ class TorneoUpdate(BaseModel):
 
 
 class TorneoOut(BaseModel):
-    id:              int
-    nombre:          str
-    descripcion:     Optional[str]  = None
-    fecha_inicio:    Optional[date] = None
-    fecha_fin:       Optional[date] = None
-    organizacion_id: Optional[int]  = None
-    activo:          bool
+    id:                  int
+    nombre:              str
+    descripcion:         Optional[str]  = None
+    fecha_inicio:        Optional[date] = None
+    fecha_fin:           Optional[date] = None
+    organizacion_id:     Optional[int]  = None
+    organizacion_nombre: Optional[str]  = None
+    activo:              bool
 
     model_config = {"from_attributes": True}

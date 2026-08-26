@@ -16,3 +16,7 @@ class Torneo(Base):
 
     organizacion    = relationship("Usuario", foreign_keys=[organizacion_id])
     partidos        = relationship("Partido", back_populates="torneo", cascade="all, delete-orphan")
+
+    @property
+    def organizacion_nombre(self):
+        return self.organizacion.nombre if self.organizacion else None

@@ -1,5 +1,5 @@
 from typing import Optional, List
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.models.torneo import Torneo   # ✅
 
@@ -8,11 +8,14 @@ class TorneoRepository:
     def __init__(self, db: Session):
         self.db = db
 
+    def _query_full(self):
+        return self.db.query(Torneo).options(joinedload(Torneo.organizacion))
+
     def get_by_id(self, torneo_id: int) -> Optional[Torneo]:
-        return self.db.get(Torneo, torneo_id)
+        return self._query_full().filter(Torneo.id == torneo_id).first()
 
     def list_all(self, activo: Optional[bool] = None) -> List[Torneo]:
-        q = self.db.query(Torneo)
+        q = self._query_full()
         if activo is not None:
             q = q.filter(Torneo.activo == activo)
         return q.order_by(Torneo.fecha_inicio.desc()).all()

@@ -9,6 +9,7 @@ document.getElementById('uAvatar').textContent = (ME.nombre || 'U')[0].toUpperCa
 document.getElementById('uName').textContent = ME.nombre || '';
 document.getElementById('uRole').textContent = ME.rol || '';
 if (!isAdmin) document.querySelectorAll('.ao').forEach(el => el.remove());
+if (ME.rol !== 'admin') document.querySelectorAll('.admin-only').forEach(el => el.remove());
 
 // ── Toast ─────────────────────────────────────────────────────────────────────
 function toast(msg, tipo = '') {
@@ -24,9 +25,11 @@ function toast(msg, tipo = '') {
 const TITULOS = { dashboard: 'Dashboard', partidos: 'Partidos', torneos: 'Torneos', usuarios: 'Árbitros y Usuarios' };
 
 function showSection(id) {
+  const sec = document.getElementById('sec-' + id);
+  if (!sec) return;
   document.querySelectorAll('.section').forEach(s => s.style.display = 'none');
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('sec-' + id).style.display = 'block';
+  sec.style.display = 'block';
   document.querySelector(`.nav-item[data-s="${id}"]`)?.classList.add('active');
   document.getElementById('topTitle').textContent = TITULOS[id] || id;
   ({ dashboard: loadDashboard, partidos: loadPartidos, torneos: loadTorneos, usuarios: loadUsuarios }[id] || (() => { }))();
@@ -60,6 +63,10 @@ function cupo(p) {
   const cls = a === 0 ? 'cupo-vacio' : a >= t ? 'cupo-completo' : 'cupo-parcial';
   return `<span class="cupo ${cls}"><span class="cupo-dot"></span>${a}/${t}</span>`;
 }
+function equipos(p) {
+  if (!p.equipo_local && !p.equipo_visitante) return '—';
+  return `${p.equipo_local || '—'} <span style="color:var(--muted)">vs</span> ${p.equipo_visitante || '—'}`;
+}
 
 // ═════════════════════════════════════════════════════════════════════════════
 // DASHBOARD
@@ -69,16 +76,16 @@ async function loadDashboard() {
     const [partidos, torneos, arbitros] = await Promise.all([
       API.get('/partidos'), API.get('/torneos'), API.get('/usuarios?rol=arbitro'),
     ]);
-    const sinAsignar = partidos.filter(p =>
+    const proximosPartidos = partidos.filter(p => new Date(p.fecha_hora) >= new Date());
+    const sinAsignar = proximosPartidos.filter(p =>
       p.asignaciones.length < p.cantidad_arbitros + p.cantidad_asistentes);
 
-    document.getElementById('stPartidos').textContent = partidos.length;
+    document.getElementById('stPartidos').textContent = proximosPartidos.length;
     document.getElementById('stSinAsig').textContent = sinAsignar.length;
     document.getElementById('stTorneos').textContent = torneos.filter(t => t.activo).length;
     document.getElementById('stArbitros').textContent = arbitros.length;
 
-    const proximos = [...partidos]
-      .filter(p => new Date(p.fecha_hora) >= new Date())
+    const proximos = [...proximosPartidos]
       .sort((a, b) => new Date(a.fecha_hora) - new Date(b.fecha_hora))
       .slice(0, 6);
 
@@ -87,11 +94,13 @@ async function loadDashboard() {
           <tr>
             <td>${fDT(p.fecha_hora)}</td>
             <td>${p.torneo_nombre || '—'}</td>
+            <td>${p.organizacion_nombre || 'Sin organización'}</td>
             <td><strong>${p.cancha}</strong></td>
+            <td>${equipos(p)}</td>
             <td>${cupo(p)}</td>
             <td><button class="btn btn-sm btn-primary ao" onclick="abrirAsignar(${p.id})">Asignar</button></td>
           </tr>`).join('')
-      : `<tr><td colspan="5"><div class="empty-state"><div class="ei">📋</div><p>Sin próximos partidos</p></div></td></tr>`;
+      : `<tr><td colspan="7"><div class="empty-state"><div class="ei">📋</div><p>Sin próximos partidos</p></div></td></tr>`;
   } catch (e) { toast(e.message, 'err'); }
 }
 
@@ -113,6 +122,7 @@ function renderTorneos(list) {
         <tr>
           <td>${t.id}</td>
           <td><strong>${t.nombre}</strong></td>
+          <td>${t.organizacion_nombre || '—'}</td>
           <td>${t.descripcion || '—'}</td>
           <td>${t.fecha_inicio || '—'}</td>
           <td>${t.fecha_fin || '—'}</td>
@@ -122,7 +132,7 @@ function renderTorneos(list) {
             <button class="btn-icon" onclick="eliminarTorneo(${t.id})">🗑️</button>
           </div></td>
         </tr>`).join('')
-    : `<tr><td colspan="7"><div class="empty-state"><div class="ei">🏆</div><p>Sin torneos</p></div></td></tr>`;
+    : `<tr><td colspan="8"><div class="empty-state"><div class="ei">🏆</div><p>Sin torneos</p></div></td></tr>`;
 }
 
 async function abrirModalTorneo(t = null) {
@@ -198,7 +208,11 @@ function filtrarPartidos() {
   let list = _partidos;
   if (tid) list = list.filter(p => p.torneo_id == tid);
   if (sinA) list = list.filter(p => p.asignaciones.length < p.cantidad_arbitros + p.cantidad_asistentes);
-  if (buscar) list = list.filter(p => p.cancha.toLowerCase().includes(buscar) || (p.torneo_nombre || '').toLowerCase().includes(buscar));
+  if (buscar) list = list.filter(p =>
+    p.cancha.toLowerCase().includes(buscar) ||
+    (p.torneo_nombre || '').toLowerCase().includes(buscar) ||
+    (p.equipo_local || '').toLowerCase().includes(buscar) ||
+    (p.equipo_visitante || '').toLowerCase().includes(buscar));
   renderPartidos(list);
 }
 
@@ -211,6 +225,7 @@ function renderPartidos(list) {
       return `<tr>
           <td>${fDT(p.fecha_hora)}</td>
           <td><strong>${p.cancha}</strong></td>
+          <td>${equipos(p)}</td>
           <td>${p.torneo_nombre || '—'}
               <div style="font-size:11px;color:var(--muted);margin-top:2px">${p.organizacion_nombre || 'Sin organización'}</div>
           </td>
@@ -225,7 +240,7 @@ function renderPartidos(list) {
           </div></td>
         </tr>`;
     }).join('')
-    : `<tr><td colspan="8"><div class="empty-state"><div class="ei">📋</div><p>Sin partidos</p></div></td></tr>`;
+    : `<tr><td colspan="9"><div class="empty-state"><div class="ei">📋</div><p>Sin partidos</p></div></td></tr>`;
 }
 
 async function abrirModalPartido(p = null) {
@@ -242,6 +257,8 @@ async function abrirModalPartido(p = null) {
   document.getElementById('mPartidoTitle').textContent     = p ? 'Editar partido' : 'Nuevo partido';
   document.getElementById('mPartidoId').value              = p?.id || '';
   document.getElementById('mPartidoCancha').value          = p?.cancha || '';
+  document.getElementById('mPartidoEquipoLocal').value     = p?.equipo_local || '';
+  document.getElementById('mPartidoEquipoVisitante').value = p?.equipo_visitante || '';
   document.getElementById('mPartidoFecha').value           = p?.fecha_hora ? p.fecha_hora.slice(0,16) : '';
   document.getElementById('mPartidoCantArb').value         = p?.cantidad_arbitros   ?? 1;
   document.getElementById('mPartidoCantAsis').value        = p?.cantidad_asistentes ?? 0;
@@ -256,6 +273,8 @@ async function guardarPartido() {
   const body = {
     torneo_id: parseInt(document.getElementById('mPartidoTorneo').value),
     cancha: document.getElementById('mPartidoCancha').value.trim(),
+    equipo_local: document.getElementById('mPartidoEquipoLocal').value.trim(),
+    equipo_visitante: document.getElementById('mPartidoEquipoVisitante').value.trim(),
     fecha_hora: document.getElementById('mPartidoFecha').value,
     cantidad_arbitros: parseInt(document.getElementById('mPartidoCantArb').value),
     cantidad_asistentes: parseInt(document.getElementById('mPartidoCantAsis').value),
@@ -263,7 +282,7 @@ async function guardarPartido() {
     valor_arbitro: parseInt(document.getElementById('mPartidoValorArb').value) || 0,
     valor_asistente: parseInt(document.getElementById('mPartidoValorAsis').value) || 0,
   };
-  if (!body.cancha || !body.fecha_hora) { toast('Completá los campos obligatorios', 'err'); return; }
+  if (!body.cancha || !body.fecha_hora || !body.equipo_local || !body.equipo_visitante) { toast('Completá los campos obligatorios', 'err'); return; }
   try {
     id ? await API.patch(`/partidos/${id}`, body) : await API.post('/partidos', body);
     toast(id ? 'Partido actualizado ✓' : 'Partido creado ✓', 'ok');
@@ -290,7 +309,8 @@ async function abrirAsignar(partidoId) {
   ]);
 
   document.getElementById('mAsigInfo').innerHTML =
-    `<strong>${partido.cancha}</strong> — ${fDT(partido.fecha_hora)}<br>
+    `<strong>${equipos(partido)}</strong><br>
+   ${partido.cancha} — ${fDT(partido.fecha_hora)}<br>
    <span style="font-size:12px;color:var(--muted)">${partido.torneo_nombre || ''} · ${partido.organizacion_nombre || 'Sin organización'}</span>`;
 
   document.getElementById('mAsigAsignados').innerHTML = partido.asignaciones.length
