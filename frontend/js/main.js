@@ -98,7 +98,10 @@ async function loadDashboard() {
             <td><strong>${p.cancha}</strong></td>
             <td>${equipos(p)}</td>
             <td>${cupo(p)}</td>
-            <td><button class="btn btn-sm btn-primary ao" onclick="abrirAsignar(${p.id})">Asignar</button></td>
+            <td><div class="td-actions">
+              <button class="btn btn-sm btn-primary ao" onclick="abrirAsignar(${p.id})">Asignar</button>
+              <button class="btn-icon" onclick="exportarPartido(${p.id})" title="Exportar partido">📄</button>
+            </div></td>
           </tr>`).join('')
       : `<tr><td colspan="7"><div class="empty-state"><div class="ei">📋</div><p>Sin próximos partidos</p></div></td></tr>`;
   } catch (e) { toast(e.message, 'err'); }
@@ -235,6 +238,7 @@ function renderPartidos(list) {
           <td>${fMoney(p.valor_arbitro)}</td>
           <td><div class="td-actions">
             <button class="btn btn-sm btn-primary ao" onclick="abrirAsignar(${p.id})">⚡</button>
+            <button class="btn-icon" onclick="exportarPartido(${p.id})" title="Exportar partido">📄</button>
             <button class="btn-icon ao" onclick="editarPartido(${p.id})">✏️</button>
             <button class="btn-icon ao" onclick="eliminarPartido(${p.id})">🗑️</button>
           </div></td>
@@ -297,6 +301,63 @@ async function eliminarPartido(id) {
   if (!confirm('¿Eliminar este partido?')) return;
   try { await API.delete(`/partidos/${id}`); toast('Eliminado', 'ok'); loadPartidos(); }
   catch (e) { toast(e.message, 'err'); }
+}
+
+async function exportarPartido(id) {
+  try {
+    const p = await API.get(`/partidos/${id}`);
+    const arbitrosHtml = (p.asignaciones && p.asignaciones.length)
+      ? p.asignaciones.map(a => `
+          <div class="arb">
+            <span>${a.usuario.nombre} <span class="muted">(${a.usuario.email})</span></span>
+            <span class="badge">${a.rol}</span>
+          </div>`).join('')
+      : '<div class="muted" style="padding:8px 0">Sin árbitros asignados</div>';
+
+    const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Ficha de partido — ${p.cancha}</title>
+<style>
+  body   { font-family: Arial, Helvetica, sans-serif; color:#0f172a; max-width:640px; margin:0 auto; padding:40px 32px; }
+  h1     { font-size:20px; margin-bottom:4px; }
+  .sub   { color:#64748b; font-size:13px; margin-bottom:24px; }
+  .row   { display:flex; justify-content:space-between; padding:9px 0; border-bottom:1px solid #e2e8f0; font-size:13px; }
+  .row .label { color:#64748b; }
+  .row .value { font-weight:600; text-align:right; }
+  h2     { font-size:14px; margin:26px 0 8px; }
+  .arb   { padding:8px 0; border-bottom:1px solid #e2e8f0; font-size:13px; display:flex; justify-content:space-between; align-items:center; }
+  .badge { display:inline-block; padding:2px 9px; border-radius:99px; background:#eff6ff; color:#1d4ed8; font-size:11px; font-weight:600; }
+  .muted { color:#94a3b8; }
+  footer { margin-top:32px; font-size:11px; color:#94a3b8; text-align:center; }
+</style>
+</head>
+<body>
+  <h1>⚽ ${p.equipo_local || '—'} vs ${p.equipo_visitante || '—'}</h1>
+  <div class="sub">${p.torneo_nombre || 'Sin torneo'} · ${p.organizacion_nombre || 'Sin organización'}</div>
+
+  <div class="row"><span class="label">Fecha y hora</span><span class="value">${fDT(p.fecha_hora)}</span></div>
+  <div class="row"><span class="label">Cancha</span><span class="value">${p.cancha}</span></div>
+  <div class="row"><span class="label">Árbitros / asistentes requeridos</span><span class="value">${p.cantidad_arbitros} / ${p.cantidad_asistentes}</span></div>
+  <div class="row"><span class="label">Modalidad de pago</span><span class="value">${p.modalidad_pago === 'en_cancha' ? 'En cancha' : 'Administrador'}</span></div>
+  <div class="row"><span class="label">Valor árbitro</span><span class="value">${fMoney(p.valor_arbitro)}</span></div>
+  <div class="row"><span class="label">Valor asistente</span><span class="value">${fMoney(p.valor_asistente)}</span></div>
+
+  <h2>Árbitros asignados</h2>
+  ${arbitrosHtml}
+
+  <footer>Gestión de Árbitros — exportado el ${fDT(new Date().toISOString())}</footer>
+</body>
+</html>`;
+
+    const win = window.open('', '_blank');
+    if (!win) { toast('Habilitá las ventanas emergentes para exportar', 'err'); return; }
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    setTimeout(() => win.print(), 250);
+  } catch (e) { toast(e.message, 'err'); }
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
