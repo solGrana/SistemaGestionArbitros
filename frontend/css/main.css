@@ -26,12 +26,58 @@
   --sidebar-w:      240px;
   --header-h:       60px;
 
+  --toast-bg:       #0f172a;
+
   --shadow-sm:  0 1px 3px rgba(0,0,0,.08);
   --shadow:     0 2px 8px rgba(0,0,0,.10);
   --shadow-lg:  0 8px 24px rgba(0,0,0,.14);
   --radius:     10px;
   --radius-sm:  6px;
 }
+
+/* ── Tema oscuro ────────────────────────────────────────────────────────────── */
+:root[data-theme="dark"] {
+  --primary:        #3b82f6;
+  --primary-hover:  #60a5fa;
+  --primary-light:  rgba(59,130,246,.16);
+  --success:        #22c55e;
+  --success-light:  rgba(34,197,94,.16);
+  --danger:         #f87171;
+  --danger-light:   rgba(248,113,113,.16);
+  --warning:        #fbbf24;
+  --warning-light:  rgba(251,191,36,.16);
+
+  --bg:             #0b1220;
+  --surface:        #111827;
+  --surface-2:      #1a2332;
+  --border:         #283244;
+
+  --text:           #e5e7eb;
+  --text-2:         #cbd5e1;
+  --muted:          #8b95a5;
+
+  --toast-bg:       #1e293b;
+
+  --shadow-sm:  0 1px 3px rgba(0,0,0,.35);
+  --shadow:     0 2px 8px rgba(0,0,0,.45);
+  --shadow-lg:  0 8px 24px rgba(0,0,0,.55);
+}
+
+body, .sidebar, .topbar, .card, .stat-card, .modal, .login-card, .btn, input, select, textarea {
+  transition: background-color .2s ease, border-color .2s ease, color .2s ease;
+}
+
+/* ── Theme toggle button ───────────────────────────────────────────────────── */
+.theme-toggle {
+  width: 34px; height: 34px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  background: var(--surface-2); border: 1px solid var(--border);
+  color: var(--text-2); font-size: 16px;
+  transition: background .15s, transform .15s;
+}
+.theme-toggle:hover { background: var(--bg); transform: scale(1.05); }
+.login-theme-toggle { position: fixed; top: 20px; right: 20px; z-index: 10; }
 
 /* ── Reset ──────────────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -163,7 +209,7 @@ tbody tr:hover td      { background: var(--surface-2); }
 .badge-green  { background: var(--success-light); color: var(--success); }
 .badge-red    { background: var(--danger-light);  color: var(--danger); }
 .badge-amber  { background: var(--warning-light); color: var(--warning); }
-.badge-gray   { background: #f1f5f9; color: var(--muted); }
+.badge-gray   { background: var(--surface-2); color: var(--muted); }
 
 /* ── Forms ──────────────────────────────────────────────────────────────────── */
 .form-group    { margin-bottom: 16px; }
@@ -224,7 +270,7 @@ tbody tr:hover td      { background: var(--surface-2); }
 
 /* ── Toast ──────────────────────────────────────────────────────────────────── */
 .toast-box { position: fixed; bottom: 24px; right: 24px; z-index: 500; display: flex; flex-direction: column; gap: 8px; }
-.toast     { background: var(--text); color: #fff; padding: 11px 18px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 8px; animation: toastIn .25s ease; }
+.toast     { background: var(--toast-bg); color: #fff; padding: 11px 18px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 8px; animation: toastIn .25s ease; }
 .toast.ok  { background: var(--success); }
 .toast.err { background: var(--danger); }
 @keyframes toastIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
@@ -236,7 +282,7 @@ tbody tr:hover td      { background: var(--surface-2); }
 .login-brand .icon { font-size: 48px; display: block; margin-bottom: 8px; }
 .login-brand h1 { font-size: 22px; font-weight: 700; }
 .login-brand p  { font-size: 13px; color: var(--muted); margin-top: 4px; }
-.login-error    { background: var(--danger-light); color: #991b1b; border: 1px solid #fecaca; border-radius: var(--radius-sm); padding: 10px 14px; font-size: 13px; margin-bottom: 16px; display: none; }
+.login-error    { background: var(--danger-light); color: var(--danger); border: 1px solid var(--danger-light); border-radius: var(--radius-sm); padding: 10px 14px; font-size: 13px; margin-bottom: 16px; display: none; }
 
 /* =============================================================================
    RESPONSIVE MOBILE (< 768px)

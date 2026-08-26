@@ -8,6 +8,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/main.css">
+  <script>
+    (function () {
+      const t = localStorage.getItem('theme');
+      if (t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    })();
+  </script>
 </head>
 
 <body>
@@ -42,7 +50,9 @@
     <div class="main">
       <header class="topbar">
         <span class="topbar-title" id="topTitle">Dashboard</span>
-        <div class="topbar-actions" id="topActions"></div>
+        <div class="topbar-actions" id="topActions">
+          <button class="theme-toggle" onclick="toggleTheme()" title="Cambiar tema">🌙</button>
+        </div>
       </header>
 
       <div class="content">
@@ -340,6 +350,7 @@
 
   <div class="toast-box" id="toasts"></div>
   <script src="/js/api.js"></script>
+  <script src="/js/theme.js"></script>
   <script src="/js/main.js"></script>
 </body>
 
