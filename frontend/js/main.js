@@ -38,7 +38,11 @@ function showSection(id) {
 document.querySelectorAll('.nav-item[data-s]').forEach(el =>
   el.addEventListener('click', () => showSection(el.dataset.s)));
 
-function logout() { localStorage.clear(); window.location.href = '/'; }
+function logout() {
+  if (!confirm('¿Seguro que querés cerrar sesión?')) return;
+  localStorage.clear();
+  window.location.href = '/';
+}
 
 // ── Modales ───────────────────────────────────────────────────────────────────
 function openModal(id) { document.getElementById(id).classList.add('open'); }
