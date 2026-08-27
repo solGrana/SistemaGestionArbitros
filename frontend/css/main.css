@@ -82,6 +82,7 @@ body, .sidebar, .topbar, .card, .stat-card, .modal, .login-card, .btn, input, se
 /* ── Reset ──────────────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { font-size: 15px; }
+html, body { overflow-x: hidden; }
 body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
 button { font-family: inherit; cursor: pointer; }
 input, select, textarea { font-family: inherit; }
@@ -147,7 +148,7 @@ input, select, textarea { font-family: inherit; }
 .logout-btn:hover   { color: #fff; }
 
 /* ── Main ───────────────────────────────────────────────────────────────────── */
-.main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+.main { margin-left: var(--sidebar-w); flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 100vh; }
 
 .topbar {
   height: var(--header-h);
@@ -168,6 +169,9 @@ input, select, textarea { font-family: inherit; }
 .stat-label { font-size: 12px; color: var(--muted); font-weight: 500; margin-bottom: 8px; }
 .stat-value { font-size: 30px; font-weight: 700; line-height: 1; }
 .stat-sub   { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+/* ── Section header (título + subtítulo + acción) ─────────────────────────────── */
+.section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
 
 /* ── Card ───────────────────────────────────────────────────────────────────── */
 .card         { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-sm); overflow: hidden; }
@@ -314,19 +318,25 @@ tbody tr:hover td      { background: var(--surface-2); }
     flex-direction: row;
     width: 100%;
     padding: 0;
-    overflow: visible;
+    overflow: hidden;
   }
 
   .nav-item {
-    flex: 1;
+    flex: 1 1 0;
+    min-width: 0;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 6px 4px 4px;
+    padding: 6px 2px 4px;
     font-size: 10px;
+    line-height: 1.15;
     gap: 3px;
     border-left: none;
     border-top: 3px solid transparent;
+    white-space: normal;
+    word-break: break-word;
+    text-align: center;
+    overflow: hidden;
   }
 
   .nav-item.active {
@@ -335,7 +345,7 @@ tbody tr:hover td      { background: var(--surface-2); }
     background: rgba(29, 78, 216, .15);
   }
 
-  .nav-item .ni { font-size: 20px; }
+  .nav-item .ni { font-size: 20px; flex-shrink: 0; }
 
   /* ── Main ── */
   .main {
@@ -352,14 +362,21 @@ tbody tr:hover td      { background: var(--surface-2); }
 
   .content { padding: 12px; }
 
-  /* ── Stats 2x2 ── */
+  /* ── Stats: 2x2, celdas cuadradas que entran en el ancho de pantalla ── */
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
     margin-bottom: 14px;
   }
 
-  .stat-card  { padding: 14px 12px; }
+  .stat-card {
+    min-width: 0;
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 14px;
+  }
   .stat-value { font-size: 22px; }
   .stat-label { font-size: 11px; margin-bottom: 4px; }
   .stat-sub   { font-size: 11px; }
@@ -382,7 +399,12 @@ tbody tr:hover td      { background: var(--surface-2); }
   }
 
   /* ── Cards ── */
-  .card-header { padding: 12px 14px; }
+  .card-header {
+    padding: 12px 14px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
 
   /* ── Filtros ── */
   .filter-bar {
@@ -394,10 +416,12 @@ tbody tr:hover td      { background: var(--surface-2); }
   .filter-bar .form-input,
   .filter-bar .form-select {
     max-width: 100%;
+    width: 100%;
+    min-width: 0;
   }
 
-  /* ── Section header ── */
-  .section > div:first-child {
+  /* ── Section header (título + subtítulo + botón, apilados a la izquierda) ── */
+  .section-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 10px;

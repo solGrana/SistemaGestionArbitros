@@ -2,7 +2,21 @@
   "permissions": {
     "allow": [
       "Bash(rm -f /tmp/smoke_test.py)",
-      "Bash(rm -f arbitros.db.bak)"
+      "Bash(rm -f arbitros.db.bak)",
+      "Bash(./venv/Scripts/python.exe -c \"import playwright\")",
+      "Bash(where node *)",
+      "Bash(npx --version)",
+      "Bash(npx --yes playwright --version)",
+      "Bash(npx --yes playwright install chromium --with-deps)",
+      "Bash(node _check_overflow.js)",
+      "Bash(git stash *)",
+      "Bash(npm install *)",
+      "Bash(node _check_layout.js)",
+      "Bash(node _check_layout2.js)",
+      "Bash(node _t.js)",
+      "Bash(node _real_check2.js)",
+      "Bash(tasklist //FI \"WINDOWTITLE eq *\")",
+      "Bash(node _real_check3.js)"
     ]
   }
 }
