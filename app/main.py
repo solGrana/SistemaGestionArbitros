@@ -31,6 +31,12 @@ def _migrate():
                 conn.execute(text("ALTER TABLE partidos ADD COLUMN equipo_local VARCHAR(120)"))
             if "equipo_visitante" not in columnas:
                 conn.execute(text("ALTER TABLE partidos ADD COLUMN equipo_visitante VARCHAR(120)"))
+            if "direccion" not in columnas:
+                conn.execute(text("ALTER TABLE partidos ADD COLUMN direccion VARCHAR(255)"))
+            if "ubicacion_lat" not in columnas:
+                conn.execute(text("ALTER TABLE partidos ADD COLUMN ubicacion_lat VARCHAR(30)"))
+            if "ubicacion_lng" not in columnas:
+                conn.execute(text("ALTER TABLE partidos ADD COLUMN ubicacion_lng VARCHAR(30)"))
 
     if "usuarios" in tablas:
         columnas = {c["name"] for c in insp.get_columns("usuarios")}

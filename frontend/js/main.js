@@ -279,6 +279,9 @@ async function abrirModalPartido(p = null) {
   document.getElementById('mPartidoTitle').textContent     = p ? 'Editar partido' : 'Nuevo partido';
   document.getElementById('mPartidoId').value              = p?.id || '';
   document.getElementById('mPartidoCancha').value          = p?.cancha || '';
+  document.getElementById('mPartidoDireccion').value       = p?.direccion || '';
+  document.getElementById('mPartidoLat').value             = p?.ubicacion_lat || '';
+  document.getElementById('mPartidoLng').value             = p?.ubicacion_lng || '';
   document.getElementById('mPartidoEquipoLocal').value     = p?.equipo_local || '';
   document.getElementById('mPartidoEquipoVisitante').value = p?.equipo_visitante || '';
   document.getElementById('mPartidoFecha').value           = p?.fecha_hora ? p.fecha_hora.slice(0,16) : '';
@@ -288,6 +291,55 @@ async function abrirModalPartido(p = null) {
   document.getElementById('mPartidoValorArb').value        = p?.valor_arbitro   ?? 0;
   document.getElementById('mPartidoValorAsis').value       = p?.valor_asistente ?? 0;
   openModal('modalPartido');
+  actualizarMapaPartido();
+}
+
+// ── Ubicación de la cancha (mapa) ────────────────────────────────────────────
+let _partidoMapa = null;
+let _partidoMarcador = null;
+
+function actualizarMapaPartido() {
+  if (!_partidoMapa) {
+    _partidoMapa = L.map('mPartidoMapa').setView([-34.6037, -58.3816], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      maxZoom: 19,
+    }).addTo(_partidoMapa);
+    _partidoMapa.on('click', e => ubicarEnMapaPartido(e.latlng.lat, e.latlng.lng));
+  }
+
+  setTimeout(() => _partidoMapa.invalidateSize(), 150);
+
+  const lat = parseFloat(document.getElementById('mPartidoLat').value);
+  const lng = parseFloat(document.getElementById('mPartidoLng').value);
+  if (!isNaN(lat) && !isNaN(lng)) {
+    ubicarEnMapaPartido(lat, lng);
+  } else if (_partidoMarcador) {
+    _partidoMapa.removeLayer(_partidoMarcador);
+    _partidoMarcador = null;
+  }
+}
+
+function ubicarEnMapaPartido(lat, lng) {
+  document.getElementById('mPartidoLat').value = lat;
+  document.getElementById('mPartidoLng').value = lng;
+  if (_partidoMarcador) {
+    _partidoMarcador.setLatLng([lat, lng]);
+  } else {
+    _partidoMarcador = L.marker([lat, lng]).addTo(_partidoMapa);
+  }
+  _partidoMapa.setView([lat, lng], 15);
+}
+
+async function buscarDireccionPartido() {
+  const direccion = document.getElementById('mPartidoDireccion').value.trim();
+  if (!direccion) { toast('Escribí una localidad o dirección para buscar', 'err'); return; }
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(direccion)}`);
+    const data = await res.json();
+    if (!data.length) { toast('No se encontró esa ubicación', 'err'); return; }
+    ubicarEnMapaPartido(parseFloat(data[0].lat), parseFloat(data[0].lon));
+  } catch (e) { toast('No se pudo buscar la ubicación', 'err'); }
 }
 
 async function guardarPartido() {
@@ -295,6 +347,9 @@ async function guardarPartido() {
   const body = {
     torneo_id: parseInt(document.getElementById('mPartidoTorneo').value),
     cancha: document.getElementById('mPartidoCancha').value.trim(),
+    direccion: document.getElementById('mPartidoDireccion').value.trim() || null,
+    ubicacion_lat: document.getElementById('mPartidoLat').value || null,
+    ubicacion_lng: document.getElementById('mPartidoLng').value || null,
     equipo_local: document.getElementById('mPartidoEquipoLocal').value.trim(),
     equipo_visitante: document.getElementById('mPartidoEquipoVisitante').value.trim(),
     fecha_hora: document.getElementById('mPartidoFecha').value,
@@ -381,6 +436,15 @@ async function exportarPartido(id) {
 // ═════════════════════════════════════════════════════════════════════════════
 // ASIGNACIONES
 // ═════════════════════════════════════════════════════════════════════════════
+function distanciaKm(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 async function abrirAsignar(partidoId) {
   const [partido, disponibles] = await Promise.all([
     API.get(`/partidos/${partidoId}`),
@@ -403,18 +467,55 @@ async function abrirAsignar(partidoId) {
         </div>`).join('')
     : '<p style="color:var(--muted);font-size:13px;padding:8px 0">Sin árbitros asignados aún</p>';
 
-  document.getElementById('mAsigDisponibles').innerHTML = disponibles.length
-    ? disponibles.map(u => `
+  // ── Calcular cercanía a la cancha, si el partido tiene ubicación cargada ──
+  const pLat = parseFloat(partido.ubicacion_lat);
+  const pLng = parseFloat(partido.ubicacion_lng);
+  const tieneUbicacionPartido = !isNaN(pLat) && !isNaN(pLng);
+
+  const conDistancia = disponibles.map(u => {
+    const lat = parseFloat(u.ubicacion_lat);
+    const lng = parseFloat(u.ubicacion_lng);
+    const distancia = (tieneUbicacionPartido && !isNaN(lat) && !isNaN(lng))
+      ? distanciaKm(pLat, pLng, lat, lng)
+      : null;
+    return { ...u, _distancia: distancia };
+  });
+
+  if (tieneUbicacionPartido) {
+    conDistancia.sort((a, b) => {
+      if (a._distancia === null) return 1;
+      if (b._distancia === null) return -1;
+      return a._distancia - b._distancia;
+    });
+  }
+
+  const cantidadConDistancia = conDistancia.filter(u => u._distancia !== null).length;
+  const cantidadRecomendados = Math.min(5, cantidadConDistancia);
+
+  document.getElementById('mAsigDisponiblesHint').textContent =
+    cantidadConDistancia > 0 ? '· ordenados por cercanía a la cancha' : '';
+
+  document.getElementById('mAsigDisponibles').innerHTML = conDistancia.length
+    ? conDistancia.map((u, i) => {
+        const recomendado = u._distancia !== null && i < cantidadRecomendados;
+        const distanciaTxt = u._distancia === null
+          ? (tieneUbicacionPartido ? 'Sin ubicación registrada' : '')
+          : u._distancia < 1 ? `${Math.round(u._distancia * 1000)} m` : `${u._distancia.toFixed(1)} km`;
+        return `
         <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
           <div>
             <strong style="font-size:13px">${u.nombre}</strong>
-            <span style="font-size:12px;color:var(--muted);margin-left:6px">${u.email}</span>
+            ${recomendado ? '<span class="badge badge-green" style="margin-left:6px">⭐ Recomendado</span>' : ''}
+            <div style="font-size:12px;color:var(--muted)">
+              ${u.email}${distanciaTxt ? ` · 📍 ${distanciaTxt}` : ''}
+            </div>
           </div>
           <div style="display:flex;gap:6px">
             <button class="btn btn-sm btn-primary"   onclick="asignar(${partidoId},${u.id},'arbitro')">Árbitro</button>
             <button class="btn btn-sm btn-secondary" onclick="asignar(${partidoId},${u.id},'asistente')">Asistente</button>
           </div>
-        </div>`).join('')
+        </div>`;
+      }).join('')
     : '<p style="color:var(--muted);font-size:13px;padding:8px 0">No hay árbitros disponibles</p>';
 
   document.getElementById('mAsigPartidoId').value = partidoId;

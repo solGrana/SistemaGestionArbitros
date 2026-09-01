@@ -9,6 +9,9 @@ class PartidoCreate(BaseModel):
     torneo_id:           int
     fecha_hora:          datetime
     cancha:              str
+    direccion:           Optional[str]  = None
+    ubicacion_lat:       Optional[str]  = None
+    ubicacion_lng:       Optional[str]  = None
     equipo_local:        str
     equipo_visitante:    str
     cantidad_arbitros:   int            = 1
@@ -21,6 +24,9 @@ class PartidoCreate(BaseModel):
 class PartidoUpdate(BaseModel):
     fecha_hora:          Optional[datetime]       = None
     cancha:              Optional[str]            = None
+    direccion:           Optional[str]            = None
+    ubicacion_lat:       Optional[str]            = None
+    ubicacion_lng:       Optional[str]            = None
     equipo_local:        Optional[str]            = None
     equipo_visitante:    Optional[str]            = None
     cantidad_arbitros:   Optional[int]            = None
@@ -44,6 +50,9 @@ class PartidoOut(BaseModel):
     torneo_nombre:       Optional[str] = None
     fecha_hora:          datetime
     cancha:              str
+    direccion:           Optional[str] = None
+    ubicacion_lat:       Optional[str] = None
+    ubicacion_lng:       Optional[str] = None
     equipo_local:        Optional[str] = None
     equipo_visitante:    Optional[str] = None
     cantidad_arbitros:   int
