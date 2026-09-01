@@ -22,14 +22,21 @@ Base.metadata.create_all(bind=engine)
 # ── Migración liviana (agrega columnas nuevas a tablas ya existentes) ─────────
 def _migrate():
     insp = inspect(engine)
-    if "partidos" not in insp.get_table_names():
-        return
-    columnas = {c["name"] for c in insp.get_columns("partidos")}
-    with engine.begin() as conn:
-        if "equipo_local" not in columnas:
-            conn.execute(text("ALTER TABLE partidos ADD COLUMN equipo_local VARCHAR(120)"))
-        if "equipo_visitante" not in columnas:
-            conn.execute(text("ALTER TABLE partidos ADD COLUMN equipo_visitante VARCHAR(120)"))
+    tablas = insp.get_table_names()
+
+    if "partidos" in tablas:
+        columnas = {c["name"] for c in insp.get_columns("partidos")}
+        with engine.begin() as conn:
+            if "equipo_local" not in columnas:
+                conn.execute(text("ALTER TABLE partidos ADD COLUMN equipo_local VARCHAR(120)"))
+            if "equipo_visitante" not in columnas:
+                conn.execute(text("ALTER TABLE partidos ADD COLUMN equipo_visitante VARCHAR(120)"))
+
+    if "usuarios" in tablas:
+        columnas = {c["name"] for c in insp.get_columns("usuarios")}
+        with engine.begin() as conn:
+            if "direccion" not in columnas:
+                conn.execute(text("ALTER TABLE usuarios ADD COLUMN direccion VARCHAR(255)"))
 
 
 _migrate()
@@ -79,17 +86,27 @@ app.include_router(partido_router,    prefix="/api")
 app.include_router(asignacion_router, prefix="/api")
 
 # ── Frontend estático ─────────────────────────────────────────────────────────
-_frontend = os.path.join(os.path.dirname(__file__), "..", "frontend")
+# Sin cache: el navegador revalida (ETag/Last-Modified) en cada carga en vez de
+# quedarse con una versión vieja de HTML/CSS/JS entre actualizaciones.
+class NoCacheStaticFiles(StaticFiles):
+    def file_response(self, *args, **kwargs):
+        response = super().file_response(*args, **kwargs)
+        response.headers["Cache-Control"] = "no-cache"
+        return response
 
-app.mount("/css", StaticFiles(directory=os.path.join(_frontend, "css")), name="css")
-app.mount("/js",  StaticFiles(directory=os.path.join(_frontend, "js")),  name="js")
+
+_frontend = os.path.join(os.path.dirname(__file__), "..", "frontend")
+_no_cache_headers = {"Cache-Control": "no-cache"}
+
+app.mount("/css", NoCacheStaticFiles(directory=os.path.join(_frontend, "css")), name="css")
+app.mount("/js",  NoCacheStaticFiles(directory=os.path.join(_frontend, "js")),  name="js")
 
 
 @app.get("/")
 def serve_login():
-    return FileResponse(os.path.join(_frontend, "index.html"))
+    return FileResponse(os.path.join(_frontend, "index.html"), headers=_no_cache_headers)
 
 
 @app.get("/dashboard")
 def serve_dashboard():
-    return FileResponse(os.path.join(_frontend, "dashboard.html"))
+    return FileResponse(os.path.join(_frontend, "dashboard.html"), headers=_no_cache_headers)

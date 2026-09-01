@@ -16,7 +16,21 @@
       "Bash(node _t.js)",
       "Bash(node _real_check2.js)",
       "Bash(tasklist //FI \"WINDOWTITLE eq *\")",
-      "Bash(node _real_check3.js)"
+      "Bash(node _real_check3.js)",
+      "Bash(node _logout_check.js)",
+      "Bash(./venv/Scripts/python.exe -m uvicorn app.main:app --port 8795)",
+      "Bash(curl -s -o /dev/null -w \"server: %{http_code}\\\\n\" http://127.0.0.1:8795/)",
+      "Bash(node -e ' *)",
+      "Bash(netstat -ano)",
+      "Bash(./venv/Scripts/python.exe -m uvicorn app.main:app --port 8796)",
+      "Bash(curl -sI http://127.0.0.1:8796/js/theme.js)",
+      "Bash(taskkill //PID 17656 //F)",
+      "Bash(rm -rf node_modules package-lock.json /tmp/uv5.log /tmp/uv6.log)",
+      "Bash(node _auth_check.js)",
+      "Bash(./venv/Scripts/python.exe -c ' *)",
+      "Bash(./venv/Scripts/python.exe -m uvicorn app.main:app --port 8801)",
+      "Bash(curl -s -o /dev/null -w \"server: %{http_code}\\\\n\" http://127.0.0.1:8801/)",
+      "Bash(node _confirm_check.js)"
     ]
   }
 }

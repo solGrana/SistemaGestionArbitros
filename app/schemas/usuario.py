@@ -6,9 +6,10 @@ from app.models.usuario import RolUsuario
 class UsuarioCreate(BaseModel):
     nombre:        str
     email:         EmailStr
-    password:      str
+    password:      Optional[str] = None
     rol:           RolUsuario   = RolUsuario.arbitro
     telefono:      Optional[str] = None
+    direccion:     Optional[str] = None
     ubicacion_lat: Optional[str] = None
     ubicacion_lng: Optional[str] = None
 
@@ -17,6 +18,7 @@ class UsuarioUpdate(BaseModel):
     nombre:        Optional[str]       = None
     rol:           Optional[RolUsuario] = None
     telefono:      Optional[str]       = None
+    direccion:     Optional[str]       = None
     ubicacion_lat: Optional[str]       = None
     ubicacion_lng: Optional[str]       = None
 
@@ -27,6 +29,7 @@ class UsuarioOut(BaseModel):
     email:         str
     rol:           RolUsuario
     telefono:      Optional[str] = None
+    direccion:     Optional[str] = None
     ubicacion_lat: Optional[str] = None
     ubicacion_lng: Optional[str] = None
 

@@ -18,6 +18,8 @@ class AuthService:
         usuario = self.repo.get_by_email(email)
         if not usuario or not verify_password(password, usuario.hashed_password):
             raise HTTPException(status_code=401, detail="Credenciales incorrectas")
+        if usuario.rol != "admin":
+            raise HTTPException(status_code=403, detail="Por el momento el inicio de sesión está habilitado solo para administradores")
         return {
             "access_token":  create_access_token(usuario.id, usuario.rol),
             "refresh_token": create_refresh_token(usuario.id),
@@ -33,6 +35,8 @@ class AuthService:
             usuario = self.repo.get_by_id(int(payload["sub"]))
             if not usuario:
                 raise HTTPException(status_code=401, detail="Usuario no encontrado")
+            if usuario.rol != "admin":
+                raise HTTPException(status_code=403, detail="Por el momento el inicio de sesión está habilitado solo para administradores")
             return {
                 "access_token":  create_access_token(usuario.id, usuario.rol),
                 "refresh_token": create_refresh_token(usuario.id),

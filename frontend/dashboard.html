@@ -8,6 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     (function () {
       const t = localStorage.getItem('theme');
@@ -52,6 +54,7 @@
         <span class="topbar-title" id="topTitle">Dashboard</span>
         <div class="topbar-actions" id="topActions">
           <button class="theme-toggle" onclick="toggleTheme()" title="Cambiar tema">🌙</button>
+          <button class="avatar topbar-logout" onclick="logout()" title="Cerrar sesión" id="topbarAvatar"></button>
         </div>
       </header>
 
@@ -326,7 +329,7 @@
 
   <!-- ════ MODAL USUARIO ════ -->
   <div class="modal-overlay" id="modalUsuario">
-    <div class="modal">
+    <div class="modal modal-lg">
       <div class="modal-header">
         <h3 id="mUsuarioTitle">Nuevo árbitro</h3>
         <button class="modal-close" onclick="closeModal('modalUsuario')">✕</button>
@@ -337,11 +340,16 @@
             id="mUsuarioNombre" class="form-input" placeholder="Ej: Juan Pérez"></div>
         <div id="mUsuarioEmailGroup" class="form-group"><label class="form-label">Email *</label><input type="email"
             id="mUsuarioEmail" class="form-input" placeholder="juan@email.com"></div>
-        <div id="mUsuarioPassGroup" class="form-group"><label class="form-label">Contraseña *</label><input
-            type="password" id="mUsuarioPassword" class="form-input" placeholder="Mínimo 6 caracteres"></div>
+        <div id="mUsuarioPassGroup" class="form-group">
+          <label class="form-label">Contraseña *</label>
+          <input type="password" id="mUsuarioPassword" class="form-input" placeholder="Mínimo 6 caracteres">
+          <p id="mUsuarioPassHint" style="font-size:11px;color:var(--muted);margin-top:4px;display:none">
+            Por el momento solo los administradores pueden iniciar sesión, así que este rol no necesita contraseña.
+          </p>
+        </div>
         <div class="form-row">
           <div class="form-group"><label class="form-label">Rol</label>
-            <select id="mUsuarioRol" class="form-select">
+            <select id="mUsuarioRol" class="form-select" onchange="actualizarPasswordUsuario(); actualizarDireccionUsuario()">
               <option value="arbitro">Árbitro</option>
               <option value="organizacion">Organización</option>
               <option value="admin">Admin</option>
@@ -350,10 +358,39 @@
           <div class="form-group"><label class="form-label">Teléfono</label><input type="tel" id="mUsuarioTelefono"
               class="form-input" placeholder="Ej: 1123456789"></div>
         </div>
+        <div id="mUsuarioDireccionGroup" style="display:none">
+          <div class="form-group">
+            <label class="form-label">Dirección</label>
+            <div style="display:flex;gap:8px">
+              <input type="text" id="mUsuarioDireccion" class="form-input" placeholder="Ej: Av. Corrientes 1234, CABA">
+              <button type="button" class="btn btn-secondary" style="white-space:nowrap" onclick="buscarDireccionUsuario()">🔍 Buscar</button>
+            </div>
+            <p style="font-size:11px;color:var(--muted);margin-top:4px">
+              Buscá la dirección o hacé clic directamente sobre el mapa para marcar el punto.
+            </p>
+          </div>
+          <div id="mUsuarioMapa" style="height:220px;border-radius:var(--radius-sm);border:1px solid var(--border);margin-bottom:16px"></div>
+          <input type="hidden" id="mUsuarioLat">
+          <input type="hidden" id="mUsuarioLng">
+        </div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="closeModal('modalUsuario')">Cancelar</button>
         <button class="btn btn-primary" onclick="guardarUsuario()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ MODAL CONFIRMAR ════ -->
+  <div class="modal-overlay" id="modalConfirm">
+    <div class="modal confirm-modal">
+      <div class="modal-body confirm-body">
+        <div class="confirm-icon" id="confirmIcon">⚠️</div>
+        <p class="confirm-message" id="confirmMessage"></p>
+      </div>
+      <div class="modal-footer confirm-footer">
+        <button class="btn btn-secondary" onclick="closeModal('modalConfirm')">Cancelar</button>
+        <button class="btn btn-danger" id="confirmOkBtn">Confirmar</button>
       </div>
     </div>
   </div>

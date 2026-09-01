@@ -18,5 +18,6 @@ class Usuario(Base):
     hashed_password = Column(String(255), nullable=False)
     rol             = Column(SAEnum(RolUsuario), nullable=False, default=RolUsuario.arbitro)
     telefono        = Column(String(30),  nullable=True)
+    direccion       = Column(String(255), nullable=True)
     ubicacion_lat   = Column(String(30),  nullable=True)
     ubicacion_lng   = Column(String(30),  nullable=True)

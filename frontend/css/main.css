@@ -77,6 +77,14 @@ body, .sidebar, .topbar, .card, .stat-card, .modal, .login-card, .btn, input, se
   transition: background .15s, transform .15s;
 }
 .theme-toggle:hover { background: var(--bg); transform: scale(1.05); }
+.topbar-logout {
+  display: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: transform .15s, filter .15s;
+}
+.topbar-logout:hover { filter: brightness(1.15); transform: scale(1.05); }
 .login-theme-toggle { position: fixed; top: 20px; right: 20px; z-index: 10; }
 
 /* ── Reset ──────────────────────────────────────────────────────────────────── */
@@ -251,6 +259,13 @@ tbody tr:hover td      { background: var(--surface-2); }
 
 @keyframes modalIn { from { opacity: 0; transform: scale(.96) translateY(8px); } to { opacity: 1; transform: none; } }
 
+/* ── Modal de confirmación ─────────────────────────────────────────────────── */
+.confirm-modal   { max-width: 360px; }
+.confirm-body     { text-align: center; padding: 32px 24px 8px; }
+.confirm-icon     { font-size: 40px; margin-bottom: 14px; }
+.confirm-message  { font-size: 14px; font-weight: 600; color: var(--text); line-height: 1.4; }
+.confirm-footer   { justify-content: center; }
+
 /* ── Cupo indicator ─────────────────────────────────────────────────────────── */
 .cupo      { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 500; }
 .cupo-dot  { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
@@ -313,6 +328,8 @@ tbody tr:hover td      { background: var(--surface-2); }
     display: none;
   }
 
+  .topbar-logout { display: inline-flex; }
+
   .sidebar-nav {
     display: flex;
     flex-direction: row;
@@ -371,15 +388,15 @@ tbody tr:hover td      { background: var(--surface-2); }
 
   .stat-card {
     min-width: 0;
-    aspect-ratio: 1;
+    aspect-ratio: 1.6;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding: 14px;
+    padding: 10px 12px;
   }
-  .stat-value { font-size: 22px; }
-  .stat-label { font-size: 11px; margin-bottom: 4px; }
-  .stat-sub   { font-size: 11px; }
+  .stat-value { font-size: 19px; }
+  .stat-label { font-size: 10px; margin-bottom: 2px; }
+  .stat-sub   { font-size: 10px; }
 
   /* ── Tablas → scroll horizontal contenido ── */
   .table-wrap {

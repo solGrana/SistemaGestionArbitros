@@ -5,7 +5,7 @@ if (!localStorage.getItem('access_token')) window.location.href = '/';
 const ME = JSON.parse(localStorage.getItem('usuario') || '{}');
 const isAdmin = ['admin', 'organizacion'].includes(ME.rol);
 
-document.getElementById('uAvatar').textContent = (ME.nombre || 'U')[0].toUpperCase();
+document.querySelectorAll('#uAvatar, #topbarAvatar').forEach(el => el.textContent = (ME.nombre || 'U')[0].toUpperCase());
 document.getElementById('uName').textContent = ME.nombre || '';
 document.getElementById('uRole').textContent = ME.rol || '';
 if (!isAdmin) document.querySelectorAll('.ao').forEach(el => el.remove());
@@ -38,10 +38,22 @@ function showSection(id) {
 document.querySelectorAll('.nav-item[data-s]').forEach(el =>
   el.addEventListener('click', () => showSection(el.dataset.s)));
 
+function showConfirm(message, onConfirm, { icon = '⚠️', okText = 'Confirmar' } = {}) {
+  document.getElementById('confirmMessage').textContent = message;
+  document.getElementById('confirmIcon').textContent = icon;
+  const okBtn = document.getElementById('confirmOkBtn');
+  okBtn.textContent = okText;
+  const freshBtn = okBtn.cloneNode(true);
+  okBtn.replaceWith(freshBtn);
+  freshBtn.addEventListener('click', () => { closeModal('modalConfirm'); onConfirm(); });
+  openModal('modalConfirm');
+}
+
 function logout() {
-  if (!confirm('¿Seguro que querés cerrar sesión?')) return;
-  localStorage.clear();
-  window.location.href = '/';
+  showConfirm('¿Seguro que querés cerrar sesión?', () => {
+    localStorage.clear();
+    window.location.href = '/';
+  }, { icon: '🚪', okText: 'Cerrar sesión' });
 }
 
 // ── Modales ───────────────────────────────────────────────────────────────────
@@ -80,7 +92,9 @@ async function loadDashboard() {
     const [partidos, torneos, arbitros] = await Promise.all([
       API.get('/partidos'), API.get('/torneos'), API.get('/usuarios?rol=arbitro'),
     ]);
-    const proximosPartidos = partidos.filter(p => new Date(p.fecha_hora) >= new Date());
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const proximosPartidos = partidos.filter(p => new Date(p.fecha_hora) >= hoy);
     const sinAsignar = proximosPartidos.filter(p =>
       p.asignaciones.length < p.cantidad_arbitros + p.cantidad_asistentes);
 
@@ -91,7 +105,7 @@ async function loadDashboard() {
 
     const proximos = [...proximosPartidos]
       .sort((a, b) => new Date(a.fecha_hora) - new Date(b.fecha_hora))
-      .slice(0, 6);
+      .slice(0, 10);
 
     document.getElementById('dashTableBody').innerHTML = proximos.length
       ? proximos.map(p => `
@@ -471,19 +485,93 @@ function abrirModalUsuario(u = null) {
   document.getElementById('mUsuarioPassword').value = '';
   document.getElementById('mUsuarioRol').value = u?.rol || 'arbitro';
   document.getElementById('mUsuarioTelefono').value = u?.telefono || '';
+  document.getElementById('mUsuarioDireccion').value = u?.direccion || '';
+  document.getElementById('mUsuarioLat').value = u?.ubicacion_lat || '';
+  document.getElementById('mUsuarioLng').value = u?.ubicacion_lng || '';
   document.getElementById('mUsuarioPassGroup').style.display = u ? 'none' : 'block';
   document.getElementById('mUsuarioEmailGroup').style.display = u ? 'none' : 'block';
+  actualizarPasswordUsuario();
   openModal('modalUsuario');
+  actualizarDireccionUsuario();
+}
+
+function actualizarPasswordUsuario() {
+  const passGroup = document.getElementById('mUsuarioPassGroup');
+  if (passGroup.style.display === 'none') return;
+  const requierePassword = document.getElementById('mUsuarioRol').value === 'admin';
+  const passInput = document.getElementById('mUsuarioPassword');
+  passInput.disabled = !requierePassword;
+  document.getElementById('mUsuarioPassHint').style.display = requierePassword ? 'none' : 'block';
+  if (!requierePassword) passInput.value = '';
+}
+
+// ── Dirección + mapa (solo para usuarios con rol Árbitro) ───────────────────────
+let _usuarioMapa = null;
+let _usuarioMarcador = null;
+
+function actualizarDireccionUsuario() {
+  const grupo = document.getElementById('mUsuarioDireccionGroup');
+  const esArbitro = document.getElementById('mUsuarioRol').value === 'arbitro';
+  grupo.style.display = esArbitro ? 'block' : 'none';
+  if (!esArbitro) return;
+
+  if (!_usuarioMapa) {
+    _usuarioMapa = L.map('mUsuarioMapa').setView([-34.6037, -58.3816], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      maxZoom: 19,
+    }).addTo(_usuarioMapa);
+    _usuarioMapa.on('click', e => ubicarEnMapaUsuario(e.latlng.lat, e.latlng.lng));
+  }
+
+  setTimeout(() => _usuarioMapa.invalidateSize(), 150);
+
+  const lat = parseFloat(document.getElementById('mUsuarioLat').value);
+  const lng = parseFloat(document.getElementById('mUsuarioLng').value);
+  if (!isNaN(lat) && !isNaN(lng)) {
+    ubicarEnMapaUsuario(lat, lng);
+  } else if (_usuarioMarcador) {
+    _usuarioMapa.removeLayer(_usuarioMarcador);
+    _usuarioMarcador = null;
+  }
+}
+
+function ubicarEnMapaUsuario(lat, lng) {
+  document.getElementById('mUsuarioLat').value = lat;
+  document.getElementById('mUsuarioLng').value = lng;
+  if (_usuarioMarcador) {
+    _usuarioMarcador.setLatLng([lat, lng]);
+  } else {
+    _usuarioMarcador = L.marker([lat, lng]).addTo(_usuarioMapa);
+  }
+  _usuarioMapa.setView([lat, lng], 15);
+}
+
+async function buscarDireccionUsuario() {
+  const direccion = document.getElementById('mUsuarioDireccion').value.trim();
+  if (!direccion) { toast('Escribí una dirección para buscar', 'err'); return; }
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(direccion)}`);
+    const data = await res.json();
+    if (!data.length) { toast('No se encontró esa dirección', 'err'); return; }
+    ubicarEnMapaUsuario(parseFloat(data[0].lat), parseFloat(data[0].lon));
+  } catch (e) { toast('No se pudo buscar la dirección', 'err'); }
 }
 
 async function guardarUsuario() {
   const id = document.getElementById('mUsuarioId').value;
+  const ubicacion = {
+    direccion: document.getElementById('mUsuarioDireccion').value.trim() || null,
+    ubicacion_lat: document.getElementById('mUsuarioLat').value || null,
+    ubicacion_lng: document.getElementById('mUsuarioLng').value || null,
+  };
   try {
     if (id) {
       await API.patch(`/usuarios/${id}`, {
         nombre: document.getElementById('mUsuarioNombre').value.trim(),
         rol: document.getElementById('mUsuarioRol').value,
         telefono: document.getElementById('mUsuarioTelefono').value.trim() || null,
+        ...ubicacion,
       });
       toast('Usuario actualizado ✓', 'ok');
     } else {
@@ -493,6 +581,7 @@ async function guardarUsuario() {
         password: document.getElementById('mUsuarioPassword').value,
         rol: document.getElementById('mUsuarioRol').value,
         telefono: document.getElementById('mUsuarioTelefono').value.trim() || null,
+        ...ubicacion,
       });
       toast('Usuario creado ✓', 'ok');
     }
