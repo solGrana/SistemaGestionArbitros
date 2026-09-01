@@ -546,6 +546,7 @@ async function asignar(partidoId, usuarioId, rol) {
     toast('Árbitro asignado ✓', 'ok');
     abrirAsignar(partidoId);
     loadPartidos();
+    loadDashboard();
   } catch (e) { toast(e.message, 'err'); }
 }
 
@@ -555,6 +556,7 @@ async function desasignar(partidoId, usuarioId) {
     toast('Árbitro removido', 'ok');
     abrirAsignar(partidoId);
     loadPartidos();
+    loadDashboard();
   } catch (e) { toast(e.message, 'err'); }
 }
 
