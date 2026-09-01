@@ -491,35 +491,53 @@ async function abrirAsignar(partidoId) {
 
   const cantidadConDistancia = conDistancia.filter(u => u._distancia !== null).length;
   const cantidadRecomendados = Math.min(5, cantidadConDistancia);
+  conDistancia.forEach((u, i) => {
+    u._recomendado = u._distancia !== null && i < cantidadRecomendados;
+    u._distanciaTxt = u._distancia === null
+      ? (tieneUbicacionPartido ? 'Sin ubicación registrada' : '')
+      : u._distancia < 1 ? `${Math.round(u._distancia * 1000)} m` : `${u._distancia.toFixed(1)} km`;
+  });
 
   document.getElementById('mAsigDisponiblesHint').textContent =
     cantidadConDistancia > 0 ? '· ordenados por cercanía a la cancha' : '';
 
-  document.getElementById('mAsigDisponibles').innerHTML = conDistancia.length
-    ? conDistancia.map((u, i) => {
-        const recomendado = u._distancia !== null && i < cantidadRecomendados;
-        const distanciaTxt = u._distancia === null
-          ? (tieneUbicacionPartido ? 'Sin ubicación registrada' : '')
-          : u._distancia < 1 ? `${Math.round(u._distancia * 1000)} m` : `${u._distancia.toFixed(1)} km`;
-        return `
+  _asigDisponibles = conDistancia;
+  _asigPartidoId = partidoId;
+  document.getElementById('mAsigBuscar').value = '';
+  renderMAsigDisponibles(conDistancia, partidoId);
+
+  document.getElementById('mAsigPartidoId').value = partidoId;
+  openModal('modalAsignar');
+}
+
+let _asigDisponibles = [];
+let _asigPartidoId = null;
+
+function renderMAsigDisponibles(lista, partidoId) {
+  document.getElementById('mAsigDisponibles').innerHTML = lista.length
+    ? lista.map(u => `
         <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
           <div>
             <strong style="font-size:13px">${u.nombre}</strong>
-            ${recomendado ? '<span class="badge badge-green" style="margin-left:6px">⭐ Recomendado</span>' : ''}
+            ${u._recomendado ? '<span class="badge badge-green" style="margin-left:6px">⭐ Recomendado</span>' : ''}
             <div style="font-size:12px;color:var(--muted)">
-              ${u.email}${distanciaTxt ? ` · 📍 ${distanciaTxt}` : ''}
+              ${u.email}${u._distanciaTxt ? ` · 📍 ${u._distanciaTxt}` : ''}
             </div>
           </div>
           <div style="display:flex;gap:6px">
             <button class="btn btn-sm btn-primary"   onclick="asignar(${partidoId},${u.id},'arbitro')">Árbitro</button>
             <button class="btn btn-sm btn-secondary" onclick="asignar(${partidoId},${u.id},'asistente')">Asistente</button>
           </div>
-        </div>`;
-      }).join('')
-    : '<p style="color:var(--muted);font-size:13px;padding:8px 0">No hay árbitros disponibles</p>';
+        </div>`).join('')
+    : `<p style="color:var(--muted);font-size:13px;padding:8px 0">${document.getElementById('mAsigBuscar').value.trim() ? 'No se encontraron árbitros con ese criterio' : 'No hay árbitros disponibles'}</p>`;
+}
 
-  document.getElementById('mAsigPartidoId').value = partidoId;
-  openModal('modalAsignar');
+function filtrarDisponiblesAsignar() {
+  const buscar = document.getElementById('mAsigBuscar').value.toLowerCase().trim();
+  const lista = buscar
+    ? _asigDisponibles.filter(u => u.nombre.toLowerCase().includes(buscar) || u.email.toLowerCase().includes(buscar))
+    : _asigDisponibles;
+  renderMAsigDisponibles(lista, _asigPartidoId);
 }
 
 async function asignar(partidoId, usuarioId, rol) {
