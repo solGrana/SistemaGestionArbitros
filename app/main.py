@@ -5,9 +5,11 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from sqlalchemy import inspect, text
 
+from app.config import SECRET_KEY
 from app.database import engine, Base, SessionLocal
 from app.models import Usuario, Torneo, Partido, Asignacion  # registra los modelos
 from app.core.security import hash_password
+from app.core.rate_limit import RateLimitMiddleware
 from app.controllers.auth_controller       import router as auth_router
 from app.controllers.usuario_controller    import router as usuario_router
 from app.controllers.torneo_controller     import router as torneo_router
@@ -71,6 +73,16 @@ def _seed():
 _seed()
 
 
+# ── Aviso de producción ───────────────────────────────────────────────────────
+if SECRET_KEY == "dev_secret":
+    print(
+        "ADVERTENCIA: SECRET_KEY sigue en su valor de desarrollo por defecto: "
+        "cualquiera que lo conozca puede forjar tokens de acceso válidos. "
+        "Configura una variable de entorno SECRET_KEY con un valor largo y aleatorio "
+        "antes de exponer esto en produccion (ej: python -c \"import secrets; print(secrets.token_hex(32))\")."
+    )
+
+
 # ── App ───────────────────────────────────────────────────────────────────────
 app = FastAPI(
     title="Gestión de Árbitros",
@@ -79,6 +91,7 @@ app = FastAPI(
     redoc_url=None,
 )
 
+app.add_middleware(RateLimitMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
