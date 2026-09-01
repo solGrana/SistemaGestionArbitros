@@ -59,6 +59,22 @@ function logout() {
 // ── Modales ───────────────────────────────────────────────────────────────────
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// Deshabilita el botón mientras `accion` está en curso, para que dos clicks
+// seguidos (o un doble click) no disparen dos creaciones del mismo objeto.
+async function conBotonBloqueado(idBoton, accion) {
+  const btn = document.getElementById(idBoton);
+  if (btn.disabled) return;
+  const textoOriginal = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Guardando...';
+  try {
+    await accion();
+  } finally {
+    btn.disabled = false;
+    btn.textContent = textoOriginal;
+  }
+}
 document.querySelectorAll('.modal-overlay').forEach(o =>
   o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); }));
 
@@ -187,12 +203,14 @@ async function guardarTorneo() {
     organizacion_id: orgId ? parseInt(orgId) : null,
   };
   if (!body.nombre) { toast('El nombre es obligatorio', 'err'); return; }
-  try {
-    id ? await API.patch(`/torneos/${id}`, body) : await API.post('/torneos', body);
-    toast(id ? 'Torneo actualizado ✓' : 'Torneo creado ✓', 'ok');
-    closeModal('modalTorneo');
-    loadTorneos();
-  } catch (e) { toast(e.message, 'err'); }
+  await conBotonBloqueado('mTorneoGuardarBtn', async () => {
+    try {
+      id ? await API.patch(`/torneos/${id}`, body) : await API.post('/torneos', body);
+      toast(id ? 'Torneo actualizado ✓' : 'Torneo creado ✓', 'ok');
+      closeModal('modalTorneo');
+      loadTorneos();
+    } catch (e) { toast(e.message, 'err'); }
+  });
 }
 
 function editarTorneo(id) { abrirModalTorneo(_torneos.find(t => t.id === id)); }
@@ -362,12 +380,14 @@ async function guardarPartido() {
     notas: document.getElementById('mPartidoNotas').value.trim() || null,
   };
   if (!body.cancha || !body.fecha_hora || !body.equipo_local || !body.equipo_visitante) { toast('Completá los campos obligatorios', 'err'); return; }
-  try {
-    id ? await API.patch(`/partidos/${id}`, body) : await API.post('/partidos', body);
-    toast(id ? 'Partido actualizado ✓' : 'Partido creado ✓', 'ok');
-    closeModal('modalPartido');
-    loadPartidos();
-  } catch (e) { toast(e.message, 'err'); }
+  await conBotonBloqueado('mPartidoGuardarBtn', async () => {
+    try {
+      id ? await API.patch(`/partidos/${id}`, body) : await API.post('/partidos', body);
+      toast(id ? 'Partido actualizado ✓' : 'Partido creado ✓', 'ok');
+      closeModal('modalPartido');
+      loadPartidos();
+    } catch (e) { toast(e.message, 'err'); }
+  });
 }
 
 function editarPartido(id) { abrirModalPartido(_partidos.find(p => p.id === id)); }
@@ -714,29 +734,31 @@ async function guardarUsuario() {
     ubicacion_lat: document.getElementById('mUsuarioLat').value || null,
     ubicacion_lng: document.getElementById('mUsuarioLng').value || null,
   };
-  try {
-    if (id) {
-      await API.patch(`/usuarios/${id}`, {
-        nombre: document.getElementById('mUsuarioNombre').value.trim(),
-        rol: document.getElementById('mUsuarioRol').value,
-        telefono: document.getElementById('mUsuarioTelefono').value.trim() || null,
-        ...ubicacion,
-      });
-      toast('Usuario actualizado ✓', 'ok');
-    } else {
-      await API.post('/auth/register', {
-        nombre: document.getElementById('mUsuarioNombre').value.trim(),
-        email: document.getElementById('mUsuarioEmail').value.trim(),
-        password: document.getElementById('mUsuarioPassword').value,
-        rol: document.getElementById('mUsuarioRol').value,
-        telefono: document.getElementById('mUsuarioTelefono').value.trim() || null,
-        ...ubicacion,
-      });
-      toast('Usuario creado ✓', 'ok');
-    }
-    closeModal('modalUsuario');
-    loadUsuarios();
-  } catch (e) { toast(e.message, 'err'); }
+  await conBotonBloqueado('mUsuarioGuardarBtn', async () => {
+    try {
+      if (id) {
+        await API.patch(`/usuarios/${id}`, {
+          nombre: document.getElementById('mUsuarioNombre').value.trim(),
+          rol: document.getElementById('mUsuarioRol').value,
+          telefono: document.getElementById('mUsuarioTelefono').value.trim() || null,
+          ...ubicacion,
+        });
+        toast('Usuario actualizado ✓', 'ok');
+      } else {
+        await API.post('/auth/register', {
+          nombre: document.getElementById('mUsuarioNombre').value.trim(),
+          email: document.getElementById('mUsuarioEmail').value.trim(),
+          password: document.getElementById('mUsuarioPassword').value,
+          rol: document.getElementById('mUsuarioRol').value,
+          telefono: document.getElementById('mUsuarioTelefono').value.trim() || null,
+          ...ubicacion,
+        });
+        toast('Usuario creado ✓', 'ok');
+      }
+      closeModal('modalUsuario');
+      loadUsuarios();
+    } catch (e) { toast(e.message, 'err'); }
+  });
 }
 
 function editarUsuario(id) { abrirModalUsuario(_usuarios.find(u => u.id === id)); }
