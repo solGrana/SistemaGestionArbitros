@@ -290,6 +290,7 @@ async function abrirModalPartido(p = null) {
   document.getElementById('mPartidoModalidad').value       = p?.modalidad_pago || 'en_cancha';
   document.getElementById('mPartidoValorArb').value        = p?.valor_arbitro   ?? 0;
   document.getElementById('mPartidoValorAsis').value       = p?.valor_asistente ?? 0;
+  document.getElementById('mPartidoNotas').value = p?.notas || '';
   openModal('modalPartido');
   actualizarMapaPartido();
 }
@@ -358,6 +359,7 @@ async function guardarPartido() {
     modalidad_pago: document.getElementById('mPartidoModalidad').value,
     valor_arbitro: parseInt(document.getElementById('mPartidoValorArb').value) || 0,
     valor_asistente: parseInt(document.getElementById('mPartidoValorAsis').value) || 0,
+    notas: document.getElementById('mPartidoNotas').value.trim() || null,
   };
   if (!body.cancha || !body.fecha_hora || !body.equipo_local || !body.equipo_visitante) { toast('Completá los campos obligatorios', 'err'); return; }
   try {
@@ -403,6 +405,7 @@ async function exportarPartido(id) {
   .arb   { padding:8px 0; border-bottom:1px solid #e2e8f0; font-size:13px; display:flex; justify-content:space-between; align-items:center; }
   .badge { display:inline-block; padding:2px 9px; border-radius:99px; background:#eff6ff; color:#1d4ed8; font-size:11px; font-weight:600; }
   .muted { color:#94a3b8; }
+  .notas { background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px 14px; font-size:13px; white-space:pre-wrap; }
   footer { margin-top:32px; font-size:11px; color:#94a3b8; text-align:center; }
 </style>
 </head>
@@ -419,6 +422,8 @@ async function exportarPartido(id) {
 
   <h2>Árbitros asignados</h2>
   ${arbitrosHtml}
+
+  ${p.notas ? `<h2>Notas / Observaciones</h2><div class="notas">${p.notas}</div>` : ''}
 
   <footer>Gestión de Árbitros — exportado el ${fDT(new Date().toISOString())}</footer>
 </body>
@@ -445,11 +450,23 @@ function distanciaKm(lat1, lon1, lat2, lon2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+function mismoDia(fechaA, fechaB) {
+  const a = new Date(fechaA), b = new Date(fechaB);
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
 async function abrirAsignar(partidoId) {
-  const [partido, disponibles] = await Promise.all([
+  const [partido, disponibles, todosPartidos] = await Promise.all([
     API.get(`/partidos/${partidoId}`),
     API.get(`/asignaciones/disponibles?partido_id=${partidoId}`),
+    API.get('/partidos'),
   ]);
+
+  const idsOcupadosMismoDia = new Set();
+  todosPartidos.forEach(p2 => {
+    if (p2.id === partido.id || !mismoDia(p2.fecha_hora, partido.fecha_hora)) return;
+    (p2.asignaciones || []).forEach(a => idsOcupadosMismoDia.add(a.usuario.id));
+  });
 
   document.getElementById('mAsigInfo').innerHTML =
     `<strong>${equipos(partido)}</strong><br>
@@ -496,6 +513,7 @@ async function abrirAsignar(partidoId) {
     u._distanciaTxt = u._distancia === null
       ? (tieneUbicacionPartido ? 'Sin ubicación registrada' : '')
       : u._distancia < 1 ? `${Math.round(u._distancia * 1000)} m` : `${u._distancia.toFixed(1)} km`;
+    u._ocupadoMismoDia = idsOcupadosMismoDia.has(u.id);
   });
 
   document.getElementById('mAsigDisponiblesHint').textContent =
@@ -516,20 +534,30 @@ let _asigPartidoId = null;
 function renderMAsigDisponibles(lista, partidoId) {
   document.getElementById('mAsigDisponibles').innerHTML = lista.length
     ? lista.map(u => `
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);${u._ocupadoMismoDia ? 'opacity:.5' : ''}">
           <div>
             <strong style="font-size:13px">${u.nombre}</strong>
             ${u._recomendado ? '<span class="badge badge-green" style="margin-left:6px">⭐ Recomendado</span>' : ''}
+            ${u._ocupadoMismoDia ? '<span class="badge badge-gray" style="margin-left:6px">Ocupado ese día</span>' : ''}
             <div style="font-size:12px;color:var(--muted)">
               ${u.email}${u._distanciaTxt ? ` · 📍 ${u._distanciaTxt}` : ''}
             </div>
           </div>
           <div style="display:flex;gap:6px">
-            <button class="btn btn-sm btn-primary"   onclick="asignar(${partidoId},${u.id},'arbitro')">Árbitro</button>
-            <button class="btn btn-sm btn-secondary" onclick="asignar(${partidoId},${u.id},'asistente')">Asistente</button>
+            <button class="btn btn-sm btn-primary"   onclick="confirmarAsignar(${partidoId},${u.id},'arbitro',${!!u._ocupadoMismoDia})">Árbitro</button>
+            <button class="btn btn-sm btn-secondary" onclick="confirmarAsignar(${partidoId},${u.id},'asistente',${!!u._ocupadoMismoDia})">Asistente</button>
           </div>
         </div>`).join('')
     : `<p style="color:var(--muted);font-size:13px;padding:8px 0">${document.getElementById('mAsigBuscar').value.trim() ? 'No se encontraron árbitros con ese criterio' : 'No hay árbitros disponibles'}</p>`;
+}
+
+function confirmarAsignar(partidoId, usuarioId, rol, ocupadoMismoDia) {
+  if (!ocupadoMismoDia) { asignar(partidoId, usuarioId, rol); return; }
+  showConfirm(
+    'Este árbitro ya tiene otro partido asignado ese mismo día. ¿Querés asignarlo igual?',
+    () => asignar(partidoId, usuarioId, rol),
+    { icon: '⚠️', okText: 'Asignar igual' }
+  );
 }
 
 function filtrarDisponiblesAsignar() {

@@ -1,5 +1,5 @@
 import enum
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Enum as SAEnum
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Enum as SAEnum
 from sqlalchemy.orm import relationship
 from app.database import Base
 
@@ -26,6 +26,7 @@ class Partido(Base):
     modalidad_pago      = Column(SAEnum(ModalidadPago), default=ModalidadPago.en_cancha)
     valor_arbitro       = Column(Integer, default=0)
     valor_asistente     = Column(Integer, default=0)
+    notas               = Column(Text,                                nullable=True)
 
     torneo              = relationship("Torneo",     back_populates="partidos")
     asignaciones        = relationship("Asignacion", back_populates="partido", cascade="all, delete-orphan")

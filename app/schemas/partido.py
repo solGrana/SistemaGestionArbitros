@@ -19,6 +19,7 @@ class PartidoCreate(BaseModel):
     modalidad_pago:      ModalidadPago  = ModalidadPago.en_cancha
     valor_arbitro:       int            = 0
     valor_asistente:     int            = 0
+    notas:               Optional[str]  = None
 
 
 class PartidoUpdate(BaseModel):
@@ -34,6 +35,7 @@ class PartidoUpdate(BaseModel):
     modalidad_pago:      Optional[ModalidadPago]  = None
     valor_arbitro:       Optional[int]            = None
     valor_asistente:     Optional[int]            = None
+    notas:               Optional[str]            = None
 
 
 class AsignacionOut(BaseModel):
@@ -60,6 +62,7 @@ class PartidoOut(BaseModel):
     modalidad_pago:      ModalidadPago
     valor_arbitro:       int
     valor_asistente:     int
+    notas:               Optional[str] = None
     asignaciones:        List[AsignacionOut] = []
 
     model_config = {"from_attributes": True}
