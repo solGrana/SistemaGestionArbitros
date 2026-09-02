@@ -2,6 +2,7 @@ from typing import Optional, List
 from sqlalchemy.orm import Session, joinedload
 from app.models.partido import Partido
 from app.models.torneo import Torneo
+from app.models.asignacion import Asignacion
 
 
 class PartidoRepository:
@@ -11,11 +12,16 @@ class PartidoRepository:
     def _query_full(self):
         return self.db.query(Partido).options(
         joinedload(Partido.torneo).joinedload(Torneo.organizacion),
-        joinedload(Partido.asignaciones),
+        joinedload(Partido.asignaciones).joinedload(Asignacion.usuario),
     )
 
     def get_by_id(self, partido_id: int) -> Optional[Partido]:
         return self._query_full().filter(Partido.id == partido_id).first()
+
+    def get_by_id_simple(self, partido_id: int) -> Optional[Partido]:
+        """Como get_by_id pero sin los joins — para cuando solo hacen falta
+        columnas propias del partido (ej: validar cupo antes de asignar)."""
+        return self.db.get(Partido, partido_id)
 
     def list_all(self, torneo_id: Optional[int] = None) -> List[Partido]:
         q = self._query_full()

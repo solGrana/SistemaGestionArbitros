@@ -15,7 +15,7 @@ class AsignacionService:
         self.usuario_repo = UsuarioRepository(db)
 
     def asignar(self, partido_id: int, usuario_id: int, rol: RolAsignacion) -> Asignacion:
-        partido = self.partido_repo.get_by_id(partido_id)
+        partido = self.partido_repo.get_by_id_simple(partido_id)
         if not partido:
             raise HTTPException(status_code=404, detail="Partido no encontrado")
 
@@ -25,10 +25,10 @@ class AsignacionService:
         if usuario.rol not in (RolUsuario.arbitro, RolUsuario.admin):
             raise HTTPException(status_code=400, detail="El usuario no tiene rol de árbitro")
 
-        if self.repo.get_by_partido_y_usuario(partido_id, usuario_id):
+        asignaciones = self.repo.list_by_partido(partido_id)
+        if any(a.usuario_id == usuario_id for a in asignaciones):
             raise HTTPException(status_code=400, detail="El árbitro ya está asignado a este partido")
 
-        asignaciones = self.repo.list_by_partido(partido_id)
         arbitros   = sum(1 for a in asignaciones if a.rol == RolAsignacion.arbitro)
         asistentes = sum(1 for a in asignaciones if a.rol == RolAsignacion.asistente)
 

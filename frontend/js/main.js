@@ -56,6 +56,27 @@ function logout() {
   }, { icon: '🚪', okText: 'Cerrar sesión' });
 }
 
+// ── Indicador de carga global ────────────────────────────────────────────────
+// Usa un contador porque puede haber más de una carga en simultáneo (por
+// ejemplo, cambiar de sección justo cuando todavía está cargando la anterior).
+let _cargasActivas = 0;
+function mostrarCargando() {
+  _cargasActivas++;
+  const bar = document.getElementById('loadingBar');
+  bar.classList.add('active');
+  bar.style.width = '75%';
+}
+function ocultarCargando() {
+  _cargasActivas = Math.max(0, _cargasActivas - 1);
+  if (_cargasActivas > 0) return;
+  const bar = document.getElementById('loadingBar');
+  bar.style.width = '100%';
+  setTimeout(() => { bar.classList.remove('active'); bar.style.width = '0%'; }, 200);
+}
+function filaCargando(colspan) {
+  return `<tr><td colspan="${colspan}"><div class="empty-state"><div class="spinner"></div><p style="margin-top:10px">Cargando...</p></div></td></tr>`;
+}
+
 // ── Modales ───────────────────────────────────────────────────────────────────
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
@@ -103,42 +124,52 @@ function equipos(p) {
 // ═════════════════════════════════════════════════════════════════════════════
 // DASHBOARD
 // ═════════════════════════════════════════════════════════════════════════════
+// Solo la parte de "próximos partidos" del Dashboard (stats + tabla). No toca
+// Torneos activos ni Árbitros, así se puede usar para refrescar rápido tras
+// asignar/desasignar sin tener que volver a pedir torneos y usuarios.
+function renderDashboardPartidos(partidos) {
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  const proximosPartidos = partidos.filter(p => new Date(p.fecha_hora) >= hoy);
+  const sinAsignar = proximosPartidos.filter(p =>
+    p.asignaciones.length < p.cantidad_arbitros + p.cantidad_asistentes);
+
+  document.getElementById('stPartidos').textContent = proximosPartidos.length;
+  document.getElementById('stSinAsig').textContent = sinAsignar.length;
+
+  const proximos = [...proximosPartidos]
+    .sort((a, b) => new Date(a.fecha_hora) - new Date(b.fecha_hora))
+    .slice(0, 10);
+
+  document.getElementById('dashTableBody').innerHTML = proximos.length
+    ? proximos.map(p => `
+        <tr>
+          <td>${fDT(p.fecha_hora)}</td>
+          <td>${p.torneo_nombre || '—'}</td>
+          <td>${p.organizacion_nombre || 'Sin organización'}</td>
+          <td><strong>${p.cancha}</strong></td>
+          <td>${equipos(p)}</td>
+          <td>${cupo(p)}</td>
+          <td><div class="td-actions">
+            <button class="btn btn-sm btn-primary ao" onclick="abrirAsignar(${p.id})">Asignar</button>
+            <button class="btn-icon" onclick="exportarPartido(${p.id})" title="Exportar partido">📄</button>
+          </div></td>
+        </tr>`).join('')
+    : `<tr><td colspan="7"><div class="empty-state"><div class="ei">📋</div><p>Sin próximos partidos</p></div></td></tr>`;
+}
+
 async function loadDashboard() {
+  mostrarCargando();
+  document.getElementById('dashTableBody').innerHTML = filaCargando(7);
   try {
     const [partidos, torneos, arbitros] = await Promise.all([
-      API.get('/partidos'), API.get('/torneos'), API.get('/usuarios?rol=arbitro'),
+      API.get('/partidos/'), API.get('/torneos/'), API.get('/usuarios/?rol=arbitro'),
     ]);
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
-    const proximosPartidos = partidos.filter(p => new Date(p.fecha_hora) >= hoy);
-    const sinAsignar = proximosPartidos.filter(p =>
-      p.asignaciones.length < p.cantidad_arbitros + p.cantidad_asistentes);
-
-    document.getElementById('stPartidos').textContent = proximosPartidos.length;
-    document.getElementById('stSinAsig').textContent = sinAsignar.length;
     document.getElementById('stTorneos').textContent = torneos.filter(t => t.activo).length;
     document.getElementById('stArbitros').textContent = arbitros.length;
-
-    const proximos = [...proximosPartidos]
-      .sort((a, b) => new Date(a.fecha_hora) - new Date(b.fecha_hora))
-      .slice(0, 10);
-
-    document.getElementById('dashTableBody').innerHTML = proximos.length
-      ? proximos.map(p => `
-          <tr>
-            <td>${fDT(p.fecha_hora)}</td>
-            <td>${p.torneo_nombre || '—'}</td>
-            <td>${p.organizacion_nombre || 'Sin organización'}</td>
-            <td><strong>${p.cancha}</strong></td>
-            <td>${equipos(p)}</td>
-            <td>${cupo(p)}</td>
-            <td><div class="td-actions">
-              <button class="btn btn-sm btn-primary ao" onclick="abrirAsignar(${p.id})">Asignar</button>
-              <button class="btn-icon" onclick="exportarPartido(${p.id})" title="Exportar partido">📄</button>
-            </div></td>
-          </tr>`).join('')
-      : `<tr><td colspan="7"><div class="empty-state"><div class="ei">📋</div><p>Sin próximos partidos</p></div></td></tr>`;
+    renderDashboardPartidos(partidos);
   } catch (e) { toast(e.message, 'err'); }
+  finally { ocultarCargando(); }
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -147,10 +178,13 @@ async function loadDashboard() {
 let _torneos = [];
 
 async function loadTorneos() {
+  mostrarCargando();
+  document.getElementById('torneosTbody').innerHTML = filaCargando(8);
   try {
-    _torneos = await API.get('/torneos');
+    _torneos = await API.get('/torneos/');
     renderTorneos(_torneos);
   } catch (e) { toast(e.message, 'err'); }
+  finally { ocultarCargando(); }
 }
 
 function renderTorneos(list) {
@@ -173,22 +207,25 @@ function renderTorneos(list) {
 }
 
 async function abrirModalTorneo(t = null) {
-  // Cargar usuarios con rol organizacion o admin
-  const usuarios = await API.get('/usuarios');
-  const orgs = usuarios.filter(u => ['organizacion', 'admin'].includes(u.rol));
+  mostrarCargando();
+  try {
+    // Cargar usuarios con rol organizacion o admin
+    const usuarios = await API.get('/usuarios/');
+    const orgs = usuarios.filter(u => ['organizacion', 'admin'].includes(u.rol));
 
-  document.getElementById('mTorneoOrg').innerHTML =
-    `<option value="">Sin organizador</option>` +
-    orgs.map(u => `<option value="${u.id}" ${t?.organizacion_id == u.id ? 'selected' : ''}>${u.nombre}</option>`).join('');
+    document.getElementById('mTorneoOrg').innerHTML =
+      `<option value="">Sin organizador</option>` +
+      orgs.map(u => `<option value="${u.id}" ${t?.organizacion_id == u.id ? 'selected' : ''}>${u.nombre}</option>`).join('');
 
-  document.getElementById('mTorneoTitle').textContent = t ? 'Editar torneo' : 'Nuevo torneo';
-  document.getElementById('mTorneoId').value = t?.id || '';
-  document.getElementById('mTorneoNombre').value = t?.nombre || '';
-  document.getElementById('mTorneoDesc').value = t?.descripcion || '';
-  document.getElementById('mTorneoFechaI').value = t?.fecha_inicio || '';
-  document.getElementById('mTorneoFechaF').value = t?.fecha_fin || '';
-  document.getElementById('mTorneoActivo').checked = t?.activo ?? true;
-  openModal('modalTorneo');
+    document.getElementById('mTorneoTitle').textContent = t ? 'Editar torneo' : 'Nuevo torneo';
+    document.getElementById('mTorneoId').value = t?.id || '';
+    document.getElementById('mTorneoNombre').value = t?.nombre || '';
+    document.getElementById('mTorneoDesc').value = t?.descripcion || '';
+    document.getElementById('mTorneoFechaI').value = t?.fecha_inicio || '';
+    document.getElementById('mTorneoFechaF').value = t?.fecha_fin || '';
+    document.getElementById('mTorneoActivo').checked = t?.activo ?? true;
+    openModal('modalTorneo');
+  } finally { ocultarCargando(); }
 }
 
 async function guardarTorneo() {
@@ -205,7 +242,7 @@ async function guardarTorneo() {
   if (!body.nombre) { toast('El nombre es obligatorio', 'err'); return; }
   await conBotonBloqueado('mTorneoGuardarBtn', async () => {
     try {
-      id ? await API.patch(`/torneos/${id}`, body) : await API.post('/torneos', body);
+      id ? await API.patch(`/torneos/${id}`, body) : await API.post('/torneos/', body);
       toast(id ? 'Torneo actualizado ✓' : 'Torneo creado ✓', 'ok');
       closeModal('modalTorneo');
       loadTorneos();
@@ -226,11 +263,14 @@ async function eliminarTorneo(id) {
 let _partidos = [];
 
 async function loadPartidos() {
+  mostrarCargando();
+  document.getElementById('partidosTbody').innerHTML = filaCargando(9);
   try {
-    _partidos = await API.get('/partidos');
+    _partidos = await API.get('/partidos/');
     poblarFiltroTorneo();
     renderPartidos(_partidos);
   } catch (e) { toast(e.message, 'err'); }
+  finally { ocultarCargando(); }
 }
 
 function poblarFiltroTorneo() {
@@ -284,33 +324,36 @@ function renderPartidos(list) {
 }
 
 async function abrirModalPartido(p = null) {
-  const torneos = _torneos.length ? _torneos : await API.get('/torneos');
-  const usuarios = await API.get('/usuarios');
+  mostrarCargando();
+  try {
+    const torneos = _torneos.length ? _torneos : await API.get('/torneos/');
+    const usuarios = await API.get('/usuarios/');
 
-  document.getElementById('mPartidoTorneo').innerHTML =
-    torneos.map(t => {
-      const org = usuarios.find(u => u.id === t.organizacion_id);
-      const label = org ? `${t.nombre} — ${org.nombre}` : `${t.nombre} — Sin organización`;
-      return `<option value="${t.id}" ${p?.torneo_id == t.id ? 'selected' : ''}>${label}</option>`;
-    }).join('');
+    document.getElementById('mPartidoTorneo').innerHTML =
+      torneos.map(t => {
+        const org = usuarios.find(u => u.id === t.organizacion_id);
+        const label = org ? `${t.nombre} — ${org.nombre}` : `${t.nombre} — Sin organización`;
+        return `<option value="${t.id}" ${p?.torneo_id == t.id ? 'selected' : ''}>${label}</option>`;
+      }).join('');
 
-  document.getElementById('mPartidoTitle').textContent     = p ? 'Editar partido' : 'Nuevo partido';
-  document.getElementById('mPartidoId').value              = p?.id || '';
-  document.getElementById('mPartidoCancha').value          = p?.cancha || '';
-  document.getElementById('mPartidoDireccion').value       = p?.direccion || '';
-  document.getElementById('mPartidoLat').value             = p?.ubicacion_lat || '';
-  document.getElementById('mPartidoLng').value             = p?.ubicacion_lng || '';
-  document.getElementById('mPartidoEquipoLocal').value     = p?.equipo_local || '';
-  document.getElementById('mPartidoEquipoVisitante').value = p?.equipo_visitante || '';
-  document.getElementById('mPartidoFecha').value           = p?.fecha_hora ? p.fecha_hora.slice(0,16) : '';
-  document.getElementById('mPartidoCantArb').value         = p?.cantidad_arbitros   ?? 1;
-  document.getElementById('mPartidoCantAsis').value        = p?.cantidad_asistentes ?? 0;
-  document.getElementById('mPartidoModalidad').value       = p?.modalidad_pago || 'en_cancha';
-  document.getElementById('mPartidoValorArb').value        = p?.valor_arbitro   ?? 0;
-  document.getElementById('mPartidoValorAsis').value       = p?.valor_asistente ?? 0;
-  document.getElementById('mPartidoNotas').value = p?.notas || '';
-  openModal('modalPartido');
-  actualizarMapaPartido();
+    document.getElementById('mPartidoTitle').textContent     = p ? 'Editar partido' : 'Nuevo partido';
+    document.getElementById('mPartidoId').value              = p?.id || '';
+    document.getElementById('mPartidoCancha').value          = p?.cancha || '';
+    document.getElementById('mPartidoDireccion').value       = p?.direccion || '';
+    document.getElementById('mPartidoLat').value             = p?.ubicacion_lat || '';
+    document.getElementById('mPartidoLng').value             = p?.ubicacion_lng || '';
+    document.getElementById('mPartidoEquipoLocal').value     = p?.equipo_local || '';
+    document.getElementById('mPartidoEquipoVisitante').value = p?.equipo_visitante || '';
+    document.getElementById('mPartidoFecha').value           = p?.fecha_hora ? p.fecha_hora.slice(0,16) : '';
+    document.getElementById('mPartidoCantArb').value         = p?.cantidad_arbitros   ?? 1;
+    document.getElementById('mPartidoCantAsis').value        = p?.cantidad_asistentes ?? 0;
+    document.getElementById('mPartidoModalidad').value       = p?.modalidad_pago || 'en_cancha';
+    document.getElementById('mPartidoValorArb').value        = p?.valor_arbitro   ?? 0;
+    document.getElementById('mPartidoValorAsis').value       = p?.valor_asistente ?? 0;
+    document.getElementById('mPartidoNotas').value = p?.notas || '';
+    openModal('modalPartido');
+    actualizarMapaPartido();
+  } finally { ocultarCargando(); }
 }
 
 // ── Ubicación de la cancha (mapa) ────────────────────────────────────────────
@@ -382,7 +425,7 @@ async function guardarPartido() {
   if (!body.cancha || !body.fecha_hora || !body.equipo_local || !body.equipo_visitante) { toast('Completá los campos obligatorios', 'err'); return; }
   await conBotonBloqueado('mPartidoGuardarBtn', async () => {
     try {
-      id ? await API.patch(`/partidos/${id}`, body) : await API.post('/partidos', body);
+      id ? await API.patch(`/partidos/${id}`, body) : await API.post('/partidos/', body);
       toast(id ? 'Partido actualizado ✓' : 'Partido creado ✓', 'ok');
       closeModal('modalPartido');
       loadPartidos();
@@ -476,76 +519,87 @@ function mismoDia(fechaA, fechaB) {
 }
 
 async function abrirAsignar(partidoId) {
-  const [partido, disponibles, todosPartidos] = await Promise.all([
-    API.get(`/partidos/${partidoId}`),
-    API.get(`/asignaciones/disponibles?partido_id=${partidoId}`),
-    API.get('/partidos'),
-  ]);
+  mostrarCargando();
+  try {
+    const [partido, disponibles, todosPartidos] = await Promise.all([
+      API.get(`/partidos/${partidoId}`),
+      API.get(`/asignaciones/disponibles?partido_id=${partidoId}`),
+      API.get('/partidos/'),
+    ]);
+    renderModalAsignar(partido, disponibles, todosPartidos, partidoId);
+  } finally { ocultarCargando(); }
+}
 
-  const idsOcupadosMismoDia = new Set();
-  todosPartidos.forEach(p2 => {
-    if (p2.id === partido.id || !mismoDia(p2.fecha_hora, partido.fecha_hora)) return;
-    (p2.asignaciones || []).forEach(a => idsOcupadosMismoDia.add(a.usuario.id));
-  });
-
-  document.getElementById('mAsigInfo').innerHTML =
-    `<strong>${equipos(partido)}</strong><br>
-   ${partido.cancha} — ${fDT(partido.fecha_hora)}<br>
-   <span style="font-size:12px;color:var(--muted)">${partido.torneo_nombre || ''} · ${partido.organizacion_nombre || 'Sin organización'}</span>`;
-
-  document.getElementById('mAsigAsignados').innerHTML = partido.asignaciones.length
-    ? partido.asignaciones.map(a => `
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
-          <div>
-            <strong style="font-size:13px">${a.usuario.nombre}</strong>
-            <span class="badge ${a.rol === 'asistente' ? 'badge-amber' : 'badge-blue'}" style="margin-left:6px">${a.rol}</span>
-          </div>
-          <button class="btn btn-sm btn-danger" onclick="desasignar(${partidoId},${a.usuario.id})">Quitar</button>
-        </div>`).join('')
-    : '<p style="color:var(--muted);font-size:13px;padding:8px 0">Sin árbitros asignados aún</p>';
-
-  // ── Calcular cercanía a la cancha, si el partido tiene ubicación cargada ──
-  const pLat = parseFloat(partido.ubicacion_lat);
-  const pLng = parseFloat(partido.ubicacion_lng);
-  const tieneUbicacionPartido = !isNaN(pLat) && !isNaN(pLng);
-
-  const conDistancia = disponibles.map(u => {
-    const lat = parseFloat(u.ubicacion_lat);
-    const lng = parseFloat(u.ubicacion_lng);
-    const distancia = (tieneUbicacionPartido && !isNaN(lat) && !isNaN(lng))
-      ? distanciaKm(pLat, pLng, lat, lng)
-      : null;
-    return { ...u, _distancia: distancia };
-  });
-
-  if (tieneUbicacionPartido) {
-    conDistancia.sort((a, b) => {
-      if (a._distancia === null) return 1;
-      if (b._distancia === null) return -1;
-      return a._distancia - b._distancia;
+// Renderiza el modal de asignación a partir de datos ya obtenidos (no pide
+// nada al servidor) — la usan tanto abrirAsignar como el refresco liviano
+// que corre después de asignar/desasignar a alguien.
+function renderModalAsignar(partido, disponibles, todosPartidos, partidoId) {
+  {
+    const idsOcupadosMismoDia = new Set();
+    todosPartidos.forEach(p2 => {
+      if (p2.id === partido.id || !mismoDia(p2.fecha_hora, partido.fecha_hora)) return;
+      (p2.asignaciones || []).forEach(a => idsOcupadosMismoDia.add(a.usuario.id));
     });
+
+    document.getElementById('mAsigInfo').innerHTML =
+      `<strong>${equipos(partido)}</strong><br>
+     ${partido.cancha} — ${fDT(partido.fecha_hora)}<br>
+     <span style="font-size:12px;color:var(--muted)">${partido.torneo_nombre || ''} · ${partido.organizacion_nombre || 'Sin organización'}</span>`;
+
+    document.getElementById('mAsigAsignados').innerHTML = partido.asignaciones.length
+      ? partido.asignaciones.map(a => `
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+            <div>
+              <strong style="font-size:13px">${a.usuario.nombre}</strong>
+              <span class="badge ${a.rol === 'asistente' ? 'badge-amber' : 'badge-blue'}" style="margin-left:6px">${a.rol}</span>
+            </div>
+            <button class="btn btn-sm btn-danger" onclick="desasignar(${partidoId},${a.usuario.id})">Quitar</button>
+          </div>`).join('')
+      : '<p style="color:var(--muted);font-size:13px;padding:8px 0">Sin árbitros asignados aún</p>';
+
+    // ── Calcular cercanía a la cancha, si el partido tiene ubicación cargada ──
+    const pLat = parseFloat(partido.ubicacion_lat);
+    const pLng = parseFloat(partido.ubicacion_lng);
+    const tieneUbicacionPartido = !isNaN(pLat) && !isNaN(pLng);
+
+    const conDistancia = disponibles.map(u => {
+      const lat = parseFloat(u.ubicacion_lat);
+      const lng = parseFloat(u.ubicacion_lng);
+      const distancia = (tieneUbicacionPartido && !isNaN(lat) && !isNaN(lng))
+        ? distanciaKm(pLat, pLng, lat, lng)
+        : null;
+      return { ...u, _distancia: distancia };
+    });
+
+    if (tieneUbicacionPartido) {
+      conDistancia.sort((a, b) => {
+        if (a._distancia === null) return 1;
+        if (b._distancia === null) return -1;
+        return a._distancia - b._distancia;
+      });
+    }
+
+    const cantidadConDistancia = conDistancia.filter(u => u._distancia !== null).length;
+    const cantidadRecomendados = Math.min(5, cantidadConDistancia);
+    conDistancia.forEach((u, i) => {
+      u._recomendado = u._distancia !== null && i < cantidadRecomendados;
+      u._distanciaTxt = u._distancia === null
+        ? (tieneUbicacionPartido ? 'Sin ubicación registrada' : '')
+        : u._distancia < 1 ? `${Math.round(u._distancia * 1000)} m` : `${u._distancia.toFixed(1)} km`;
+      u._ocupadoMismoDia = idsOcupadosMismoDia.has(u.id);
+    });
+
+    document.getElementById('mAsigDisponiblesHint').textContent =
+      cantidadConDistancia > 0 ? '· ordenados por cercanía a la cancha' : '';
+
+    _asigDisponibles = conDistancia;
+    _asigPartidoId = partidoId;
+    document.getElementById('mAsigBuscar').value = '';
+    renderMAsigDisponibles(conDistancia, partidoId);
+
+    document.getElementById('mAsigPartidoId').value = partidoId;
+    openModal('modalAsignar');
   }
-
-  const cantidadConDistancia = conDistancia.filter(u => u._distancia !== null).length;
-  const cantidadRecomendados = Math.min(5, cantidadConDistancia);
-  conDistancia.forEach((u, i) => {
-    u._recomendado = u._distancia !== null && i < cantidadRecomendados;
-    u._distanciaTxt = u._distancia === null
-      ? (tieneUbicacionPartido ? 'Sin ubicación registrada' : '')
-      : u._distancia < 1 ? `${Math.round(u._distancia * 1000)} m` : `${u._distancia.toFixed(1)} km`;
-    u._ocupadoMismoDia = idsOcupadosMismoDia.has(u.id);
-  });
-
-  document.getElementById('mAsigDisponiblesHint').textContent =
-    cantidadConDistancia > 0 ? '· ordenados por cercanía a la cancha' : '';
-
-  _asigDisponibles = conDistancia;
-  _asigPartidoId = partidoId;
-  document.getElementById('mAsigBuscar').value = '';
-  renderMAsigDisponibles(conDistancia, partidoId);
-
-  document.getElementById('mAsigPartidoId').value = partidoId;
-  openModal('modalAsignar');
 }
 
 let _asigDisponibles = [];
@@ -588,24 +642,52 @@ function filtrarDisponiblesAsignar() {
   renderMAsigDisponibles(lista, _asigPartidoId);
 }
 
+// ── Carga dentro del modal de asignación (además de la barra de arriba) ──────
+function mostrarCargandoModalAsignar() {
+  document.getElementById('mAsigCargando').style.display = 'flex';
+}
+function ocultarCargandoModalAsignar() {
+  document.getElementById('mAsigCargando').style.display = 'none';
+}
+
+// Después de asignar/desasignar, un solo pedido de cada cosa (en vez de
+// pedir el partido + disponibles + partidos, y ADEMÁS volver a cargar
+// Partidos y todo el Dashboard desde cero) alcanza para refrescar el modal,
+// la tabla de Partidos y el Dashboard.
+async function refrescarTrasAsignacion(partidoId) {
+  const [partido, disponibles, todosPartidos] = await Promise.all([
+    API.get(`/partidos/${partidoId}`),
+    API.get(`/asignaciones/disponibles?partido_id=${partidoId}`),
+    API.get('/partidos/'),
+  ]);
+  renderModalAsignar(partido, disponibles, todosPartidos, partidoId);
+
+  _partidos = todosPartidos;
+  poblarFiltroTorneo();
+  filtrarPartidos();
+  renderDashboardPartidos(todosPartidos);
+}
+
 async function asignar(partidoId, usuarioId, rol) {
+  mostrarCargando();
+  mostrarCargandoModalAsignar();
   try {
     await API.post('/asignaciones/', { partido_id: partidoId, usuario_id: usuarioId, rol });
     toast('Árbitro asignado ✓', 'ok');
-    abrirAsignar(partidoId);
-    loadPartidos();
-    loadDashboard();
+    await refrescarTrasAsignacion(partidoId);
   } catch (e) { toast(e.message, 'err'); }
+  finally { ocultarCargandoModalAsignar(); ocultarCargando(); }
 }
 
 async function desasignar(partidoId, usuarioId) {
+  mostrarCargando();
+  mostrarCargandoModalAsignar();
   try {
     await API.delete(`/asignaciones/?partido_id=${partidoId}&usuario_id=${usuarioId}`);
     toast('Árbitro removido', 'ok');
-    abrirAsignar(partidoId);
-    loadPartidos();
-    loadDashboard();
+    await refrescarTrasAsignacion(partidoId);
   } catch (e) { toast(e.message, 'err'); }
+  finally { ocultarCargandoModalAsignar(); ocultarCargando(); }
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -614,10 +696,13 @@ async function desasignar(partidoId, usuarioId) {
 let _usuarios = [];
 
 async function loadUsuarios() {
+  mostrarCargando();
+  document.getElementById('usuariosTbody').innerHTML = filaCargando(6);
   try {
-    _usuarios = await API.get('/usuarios');
+    _usuarios = await API.get('/usuarios/');
     renderUsuarios(_usuarios);
   } catch (e) { toast(e.message, 'err'); }
+  finally { ocultarCargando(); }
 }
 
 function filtrarUsuarios() {
