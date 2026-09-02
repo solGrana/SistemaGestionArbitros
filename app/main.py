@@ -1,5 +1,5 @@
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -131,3 +131,11 @@ def serve_login():
 @app.get("/dashboard")
 def serve_dashboard():
     return FileResponse(os.path.join(_frontend, "dashboard.html"), headers=_no_cache_headers)
+
+
+@app.get("/favicon.ico")
+def favicon():
+    ruta = os.path.join(_frontend, "favicon.ico")
+    if not os.path.exists(ruta):
+        raise HTTPException(status_code=404, detail="favicon.ico no está cargado todavía")
+    return FileResponse(ruta, headers=_no_cache_headers)
