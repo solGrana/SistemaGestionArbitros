@@ -7,10 +7,6 @@ resumen de todo lo anterior.
 
 **Flujo de trabajo:** Usuarios → Torneos → Partidos → Asignar → Dashboard
 
-> 📌 **Sobre las imágenes**: los espacios marcados como `![Figura N — descripción](imagenes/nombre.png)`
-> son placeholders. Creá una carpeta `imagenes/` al lado de este archivo y guardá ahí cada
-> captura con el nombre indicado (por ejemplo `imagenes/login.png`) — el enlace se arma solo
-> apenas el archivo exista, no hace falta tocar el texto.
 
 ## Índice
 
