@@ -1,11 +1,13 @@
 import os
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
+from starlette.middleware.httpsredirect import HTTPSRedirectMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 from sqlalchemy import inspect, text
 
-from app.config import SECRET_KEY
+from app.config import SECRET_KEY, ENVIRONMENT
 from app.database import engine, Base, SessionLocal
 from app.models import Usuario, Torneo, Partido, Asignacion  # registra los modelos
 from app.core.security import hash_password
@@ -99,6 +101,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ── Forzar HTTPS en producción ─────────────────────────────────────────────────
+# Solo se activa con ENVIRONMENT=production (Railway/etc.) para no romper el
+# desarrollo local, que corre sobre http://127.0.0.1 sin TLS. Requiere que el
+# servidor confíe en el header X-Forwarded-Proto del proxy (ver Procfile:
+# --proxy-headers), si no cualquier deploy detrás de un proxy entra en loop de
+# redirects porque nunca ve la request como "https".
+if ENVIRONMENT == "production":
+    class HSTSMiddleware(BaseHTTPMiddleware):
+        async def dispatch(self, request, call_next):
+            response = await call_next(request)
+            response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains"
+            return response
+
+    app.add_middleware(HSTSMiddleware)
+    app.add_middleware(HTTPSRedirectMiddleware)
+
 # ── Rutas API ─────────────────────────────────────────────────────────────────
 app.include_router(auth_router,       prefix="/api")
 app.include_router(usuario_router,    prefix="/api")
@@ -139,3 +157,27 @@ def favicon():
     if not os.path.exists(ruta):
         raise HTTPException(status_code=404, detail="favicon.ico no está cargado todavía")
     return FileResponse(ruta, headers=_no_cache_headers)
+
+
+@app.get("/robots.txt")
+def robots():
+    return FileResponse(os.path.join(_frontend, "robots.txt"), media_type="text/plain")
+
+
+@app.get("/sitemap.xml")
+def sitemap(request: Request):
+    # El único URL público (todo lo demás requiere login, y robots.txt ya le
+    # pide a los buscadores que no rastreen nada) — se arma con el dominio real
+    # de cada request en vez de hardcodearlo, para que funcione igual en local,
+    # en Railway o detrás de un dominio propio.
+    base = str(request.base_url).rstrip("/")
+    xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>{base}/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+</urlset>
+"""
+    return Response(content=xml, media_type="application/xml")

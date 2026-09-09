@@ -3,6 +3,7 @@ import os
 
 load_dotenv()
 
+ENVIRONMENT                  = os.getenv("ENVIRONMENT", "development")
 DATABASE_URL                 = os.getenv("DATABASE_URL", "sqlite:///./arbitros.db")
 SECRET_KEY                   = os.getenv("SECRET_KEY", "dev_secret")
 ALGORITHM                    = os.getenv("ALGORITHM", "HS256")
