@@ -2,7 +2,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.schemas.usuario import UsuarioOut, UsuarioUpdate
+from app.schemas.usuario import UsuarioOut, UsuarioUpdate, CambiarPasswordRequest
 from app.services.usuario_service import UsuarioService
 from app.core.dependencies import get_current_user, require_admin
 from app.models.usuario import Usuario
@@ -13,6 +13,16 @@ router = APIRouter(prefix="/usuarios", tags=["Usuarios"])
 @router.get("/me", response_model=UsuarioOut)
 def me(current: Usuario = Depends(get_current_user)):
     return current
+
+
+@router.patch("/me/password")
+def cambiar_mi_password(
+    data: CambiarPasswordRequest,
+    db: Session = Depends(get_db),
+    current: Usuario = Depends(get_current_user),
+):
+    UsuarioService(db).cambiar_password(current, data.password_actual, data.password_nueva)
+    return {"ok": True}
 
 
 @router.get("/", response_model=List[UsuarioOut])

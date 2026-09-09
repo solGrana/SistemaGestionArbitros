@@ -48,6 +48,7 @@
           <div class="name" id="uName"></div>
           <div class="role" id="uRole"></div>
         </div>
+        <button class="logout-btn" onclick="abrirModalPassword()" title="Cambiar contraseña">🔑</button>
         <button class="logout-btn" onclick="logout()" title="Cerrar sesión">🚪</button>
       </div>
     </aside>
@@ -57,7 +58,8 @@
       <header class="topbar">
         <span class="topbar-title" id="topTitle">Dashboard</span>
         <div class="topbar-actions" id="topActions">
-          <button class="theme-toggle" onclick="toggleTheme()" title="Cambiar tema">🌙</button>
+          <button class="theme-toggle theme-icon" onclick="toggleTheme()" title="Cambiar tema">🌙</button>
+          <button class="theme-toggle topbar-logout" onclick="abrirModalPassword()" title="Cambiar contraseña">🔑</button>
           <button class="avatar topbar-logout" onclick="logout()" title="Cerrar sesión" id="topbarAvatar"></button>
         </div>
       </header>
@@ -420,6 +422,28 @@
       <div class="modal-footer confirm-footer">
         <button class="btn btn-secondary" onclick="closeModal('modalConfirm')">Cancelar</button>
         <button class="btn btn-danger" id="confirmOkBtn">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ MODAL CAMBIAR CONTRASEÑA ════ -->
+  <div class="modal-overlay" id="modalPassword">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Cambiar contraseña</h3>
+        <button class="modal-close" onclick="closeModal('modalPassword')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group"><label class="form-label">Contraseña actual *</label><input type="password"
+            id="mPassActual" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Contraseña nueva *</label><input type="password"
+            id="mPassNueva" class="form-input" placeholder="Mínimo 6 caracteres"></div>
+        <div class="form-group"><label class="form-label">Repetir contraseña nueva *</label><input type="password"
+            id="mPassNuevaRepeat" class="form-input"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('modalPassword')">Cancelar</button>
+        <button class="btn btn-primary" id="mPasswordGuardarBtn" onclick="guardarPassword()">Cambiar contraseña</button>
       </div>
     </div>
   </div>

@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.repositories.usuario_repository import UsuarioRepository
 from app.models.usuario import Usuario, RolUsuario
 from app.schemas.usuario import UsuarioCreate, UsuarioUpdate
-from app.core.security import hash_password
+from app.core.security import hash_password, verify_password
 
 
 class UsuarioService:
@@ -55,3 +55,11 @@ class UsuarioService:
     def eliminar(self, user_id: int) -> None:
         usuario = self.obtener(user_id)
         self.repo.delete(usuario)
+
+    def cambiar_password(self, usuario: Usuario, password_actual: str, password_nueva: str) -> None:
+        if not verify_password(password_actual, usuario.hashed_password):
+            raise HTTPException(status_code=400, detail="La contraseña actual no es correcta")
+        if len(password_nueva) < 6:
+            raise HTTPException(status_code=400, detail="La contraseña nueva debe tener al menos 6 caracteres")
+        usuario.hashed_password = hash_password(password_nueva)
+        self.repo.save(usuario)

@@ -36,6 +36,11 @@ class UsuarioOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class CambiarPasswordRequest(BaseModel):
+    password_actual: str
+    password_nueva:  str
+
+
 class LoginRequest(BaseModel):
     email:    EmailStr
     password: str

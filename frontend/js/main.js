@@ -99,6 +99,30 @@ async function conBotonBloqueado(idBoton, accion) {
 document.querySelectorAll('.modal-overlay').forEach(o =>
   o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); }));
 
+// ── Cambiar contraseña ────────────────────────────────────────────────────────
+function abrirModalPassword() {
+  document.getElementById('mPassActual').value = '';
+  document.getElementById('mPassNueva').value = '';
+  document.getElementById('mPassNuevaRepeat').value = '';
+  openModal('modalPassword');
+}
+
+async function guardarPassword() {
+  const actual = document.getElementById('mPassActual').value;
+  const nueva = document.getElementById('mPassNueva').value;
+  const repetir = document.getElementById('mPassNuevaRepeat').value;
+  if (!actual || !nueva || !repetir) { toast('Completá todos los campos', 'err'); return; }
+  if (nueva.length < 6) { toast('La contraseña nueva debe tener al menos 6 caracteres', 'err'); return; }
+  if (nueva !== repetir) { toast('Las contraseñas nuevas no coinciden', 'err'); return; }
+  await conBotonBloqueado('mPasswordGuardarBtn', async () => {
+    try {
+      await API.patch('/usuarios/me/password', { password_actual: actual, password_nueva: nueva });
+      toast('Contraseña actualizada ✓', 'ok');
+      closeModal('modalPassword');
+    } catch (e) { toast(e.message, 'err'); }
+  });
+}
+
 // ── Helpers de formato ────────────────────────────────────────────────────────
 function fDT(dt) {
   if (!dt) return '—';

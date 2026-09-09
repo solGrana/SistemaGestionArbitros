@@ -1,7 +1,7 @@
 // theme.js — modo oscuro/claro
 
 function applyThemeIcon() {
-  document.querySelectorAll('.theme-toggle').forEach(btn => {
+  document.querySelectorAll('.theme-icon').forEach(btn => {
     btn.textContent = document.documentElement.getAttribute('data-theme') === 'dark' ? '☀️' : '🌙';
   });
 }
