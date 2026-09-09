@@ -7,7 +7,6 @@ resumen de todo lo anterior.
 
 **Flujo de trabajo:** Usuarios → Torneos → Partidos → Asignar → Dashboard
 
-
 ## Índice
 
 1. [Primeros pasos](#primeros-pasos)
