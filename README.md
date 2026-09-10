@@ -29,7 +29,6 @@ Al entrar a la aplicación aparece la pantalla de login, con dos campos: **Email
 **Contraseña**. Se ingresan las credenciales y se presiona **Ingresar**. Si algo
 falla, un mensaje en rojo indica el motivo.
 
-![Figura 1 — Pantalla de login](imagenes/login.png)
 
 Por el momento, solo las cuentas con rol **Admin** pueden iniciar sesión — el
 porqué se explica en la sección de Usuarios y roles, más abajo.
@@ -58,7 +57,6 @@ dos bloques:
 - **Principal** — 📊 Dashboard y 📋 Partidos.
 - **Gestión** — 🏆 Torneos y 👤 Árbitros y Usuarios.
 
-![Figura 2 — Barra lateral en computadora, con el Dashboard abierto](imagenes/sidebar-desktop.png)
 
 ### En el celular
 
@@ -66,7 +64,6 @@ La barra lateral se convierte en un menú fijo abajo de la pantalla, con las
 mismas secciones. El recuadro de usuario pasa a ser un círculo con tu inicial
 arriba a la derecha (junto al botón de tema): tocarlo cierra la sesión.
 
-![Figura 3 — Menú inferior en celular](imagenes/sidebar-mobile.png)
 
 > 💡 **Buscadores y tablas**: en pantallas chicas, las tablas se pueden deslizar
 > hacia los costados si tienen más columnas de las que entran — el resto de la
@@ -92,7 +89,6 @@ Hay tres roles:
 
 Con **+ Nuevo usuario** se completa nombre, email, rol y (opcional) teléfono.
 
-![Figura 4 — Formulario «Nuevo usuario»](imagenes/modal-usuario.png)
 
 > ⚠️ **Por el momento, solo Admin puede iniciar sesión**
 > Si el rol es **Árbitro** u **Organización**, el campo de contraseña aparece
@@ -109,7 +105,6 @@ alcanza con la localidad o una referencia aproximada. Esta ubicación es la que
 después usa el sistema para **recomendar a los árbitros más cercanos** a cada
 partido (ver «Asignar árbitros»).
 
-![Figura 5 — Mapa de dirección al crear un árbitro](imagenes/mapa-usuario.png)
 
 Para editar (✏️) solo se pueden cambiar nombre, rol, teléfono y dirección — el
 email y la contraseña no se modifican desde ahí. 🗑️ elimina, con confirmación
@@ -132,13 +127,11 @@ usuarios cargados, se puede elegir un organizador.*
 | Fecha inicio / fin | Opcionales, solo informativas. |
 | Torneo activo | Decide si cuenta en la tarjeta «Torneos activos» del Dashboard. |
 
-![Figura 6 — Formulario «Nuevo torneo»](imagenes/modal-torneo.png)
 
 La tabla de Torneos muestra la organización de cada uno, sus fechas y su estado.
 Cada fila tiene ✏️ para editar y 🗑️ para eliminar (esto último borra también sus
 partidos asociados).
 
-![Figura 7 — Tabla de Torneos](imagenes/tabla-torneos.png)
 
 ---
 
@@ -161,7 +154,6 @@ día a día: la fila que hay que cubrir con árbitros.*
 | Valor árbitro / asistente | Montos de referencia para cada rol de trabajo. |
 | Notas / Observaciones | Texto libre para avisos como «llevar pelota propia». |
 
-![Figura 8 — Formulario «Nuevo partido», con el mapa de ubicación](imagenes/modal-partido.png)
 
 ### Encontrar un partido
 
@@ -169,7 +161,6 @@ La barra de filtros permite buscar por cancha, torneo o nombre de equipo, acotar
 por torneo específico, o tildar **Solo sin asignar** para ver únicamente los que
 todavía necesitan árbitros.
 
-![Figura 9 — Tabla de Partidos con los filtros](imagenes/tabla-partidos.png)
 
 ### Exportar la ficha de un partido
 
@@ -201,8 +192,6 @@ Cada partido define cuántos árbitros y asistentes necesita. El indicador de
 1. **Abrir la asignación** — desde el Dashboard o desde Partidos, tocar
    **Asignar** (⚡) en la fila del partido que se quiere cubrir.
 
-   ![Figura 10 — Botón «Asignar» en la tabla de Partidos](imagenes/asignar-boton.png)
-
 2. **Revisar el resumen del partido** — arriba del todo se muestra el
    enfrentamiento, la cancha, la fecha y el torneo, para confirmar de un vistazo
    que es el partido correcto.
@@ -215,8 +204,6 @@ Cada partido define cuántos árbitros y asistentes necesita. El indicador de
    una ubicación cargada, la lista de árbitros disponibles se ordena por
    distancia a la cancha, y los **5 más cercanos** quedan marcados con
    **⭐ Recomendado**, mostrando la distancia aproximada de cada uno.
-
-   ![Figura 11 — Lista de disponibles con las etiquetas de recomendado](imagenes/disponibles-recomendados.png)
 
 5. **Usar el buscador si hace falta** — el campo de búsqueda arriba de la lista
    filtra a los disponibles por nombre o email, sin perder el orden por
@@ -233,8 +220,6 @@ Cada partido define cuántos árbitros y asistentes necesita. El indicador de
    etiqueta «Ocupado ese día». Se lo puede asignar igual, pero el sistema pide
    una confirmación aparte antes de hacerlo, para evitar una superposición sin
    querer.
-
-   ![Figura 12 — Árbitro marcado «Ocupado ese día» y el aviso de confirmación](imagenes/ocupado-mismo-dia.png)
 
 8. **Repetir hasta completar el cupo** — la lista se actualiza sola después de
    cada asignación. Si se intenta asignar de más, el sistema avisa («Cupo de
@@ -272,13 +257,10 @@ Cuatro tarjetas resumen la operación:
 | Torneos activos | Torneos marcados como «activo» en este momento. |
 | Árbitros | Usuarios registrados con rol Árbitro. |
 
-![Figura 13 — Tarjetas de estadísticas del Dashboard](imagenes/dashboard-stats.png)
 
 Debajo, la tabla **«Próximos partidos»** lista los diez más cercanos en el
 tiempo. Desde ahí mismo se puede abrir **Asignar** sin ir a la sección Partidos,
 o **📄 Exportar** la ficha del partido.
-
-![Figura 14 — Tabla «Próximos partidos» del Dashboard](imagenes/dashboard-tabla.png)
 
 > 💡 **Uso diario recomendado**: el Dashboard es el punto de partida de cada
 > sesión: la tarjeta «Sin asignar» dice de un vistazo cuántos partidos necesitan
